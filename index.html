@@ -11,12 +11,10 @@ body{margin:0;background:radial-gradient(ellipse at 50% -18%,#29251b 0,transpare
 .app{max-width:660px;margin:auto;min-height:100vh;display:flex;flex-direction:column;padding:env(safe-area-inset-top) 20px env(safe-area-inset-bottom)}
 header{padding:34px 0 25px;display:flex;flex-direction:column;align-items:center;gap:9px;text-align:center}
 h1{font-size:17px;letter-spacing:.22em;margin:0;font-weight:650;color:#eee9dc}
-.sub{color:var(--muted);font-size:11px;letter-spacing:.08em;margin-top:0}
 .status{font-size:9px;letter-spacing:.16em;color:var(--gold);border:1px solid #514630;padding:6px 10px;border-radius:99px;margin-top:3px}
 .mode{width:min(100%,430px);margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:8px;background:transparent;border:0;padding:0}
 .mode button{min-height:49px;border:1px solid var(--line);background:#101213;color:#a4a197;border-radius:9px;padding:11px 8px;font-size:11px;letter-spacing:.09em;font-weight:650;transition:background .2s,border-color .2s,color .2s}
 .mode button.active[data-mode="en-th"],.mode button.active[data-mode="th-en"]{background:#292419;border-color:var(--gold-soft);color:#e8d4a6;box-shadow:inset 0 0 0 1px #8e784d30}
-.hint{text-align:center;color:#9d988b;font-size:11px;letter-spacing:.04em;padding:13px 4px 6px}
 #chat{flex:1;min-height:220px;max-height:54vh;overflow:auto;padding:18px 0 22px;display:flex;flex-direction:column;gap:12px}
 .empty{margin:auto;text-align:center;color:#85857e;line-height:1.7;padding:28px 20px;font-size:13px}
 .empty strong{display:block;color:#e5dfd1;font-size:15px;font-weight:550;margin-bottom:7px}
@@ -35,7 +33,8 @@ h1{font-size:17px;letter-spacing:.22em;margin:0;font-weight:650;color:#eee9dc}
 .mic svg{width:26px;height:26px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
 .mic.listening,.mic.held{background:radial-gradient(circle at 35% 25%,#8f2424,#3b1010 72%);border-color:#ff5a52;color:#fff0ed;box-shadow:0 0 0 9px #e33b351c,0 12px 32px #0008;animation:holdPulse 1s infinite}
 @keyframes holdPulse{50%{box-shadow:0 0 0 16px #e33b3510,0 12px 32px #0008;border-color:#ff8982}}
-.miclabel{text-align:center;color:#b7ad96;font-size:11px;letter-spacing:.04em;margin-top:11px}
+.miclabel{text-align:center;color:#b7ad96;font-size:11px;letter-spacing:.04em;margin-top:11px;opacity:1;transition:opacity .35s ease}
+.miclabel.notice-fade{opacity:0}
 .compose{display:flex;gap:8px}
 .compose input{flex:1;min-width:0;background:#111315;border:1px solid var(--line);border-radius:9px;padding:14px;color:var(--text);font-size:15px;outline:none}
 .compose input:focus{border-color:var(--gold-soft)}
@@ -53,9 +52,8 @@ button:disabled{opacity:.4;cursor:not-allowed}
 @media(max-width:380px){.app{padding-left:15px;padding-right:15px}header{padding-top:27px}.mode button{font-size:10px;letter-spacing:.05em}.mic{width:76px;height:76px}}
 </style></head>
 <body><div class="app">
-<header><div><h1>THAI TRANSLATOR</h1><div class="sub">Thai ↔ English · Conversation mode</div></div><div class="status" id="status">HOLD TO SPEAK</div></header>
+<header><h1>THAI TRANSLATOR</h1><div class="status" id="status">HOLD TO SPEAK</div></header>
 <div class="mode" role="group" aria-label="Translation direction"><button class="active" data-mode="en-th" id="enTh">ENGLISH SPEAKS</button><button data-mode="th-en" id="thEn">THAI SPEAKS</button></div>
-<div class="hint" id="hint">English → Thai · Hold the microphone while you speak</div>
 <main id="chat" aria-live="polite"><div class="empty" id="empty"><strong>Your conversation will appear here.</strong>Choose who is speaking, hold the microphone while you talk, then release it to translate.</div></main>
 <section class="controls"><div class="microw"><div><button class="mic" id="mic" aria-label="Hold to speak"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="2.5" width="6" height="12" rx="3"></rect><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3.5M9 21.5h6"></path></svg></button><div class="miclabel" id="miclabel">Hold to speak</div></div></div>
 <form class="compose" id="form"><input id="typed" autocomplete="off" placeholder="Or type a sentence…" aria-label="Type a sentence"><button class="send" type="submit">Send</button></form>
@@ -65,7 +63,7 @@ button:disabled{opacity:.4;cursor:not-allowed}
 (()=>{
 'use strict';
 const $=id=>document.getElementById(id);
-let mode='en-th',recognition=null,listening=false,starting=false,busy=false,gotResult=false,stopRequested=false,recognitionError='',capturedText='',interimText='',recognitionEnded=false,pressActive=false,keyboardPress=false;
+let mode='en-th',recognition=null,listening=false,starting=false,busy=false,gotResult=false,stopRequested=false,recognitionError='',capturedText='',interimText='',recognitionEnded=false,pressActive=false,keyboardPress=false,noticeTimer=null;
 const chat=$('chat'),mic=$('mic'),status=$('status');
 const SpeechRecognition=window.SpeechRecognition||window.webkitSpeechRecognition;
 const supported=!!SpeechRecognition;
@@ -80,19 +78,28 @@ function setBusy(value){
  document.querySelectorAll('.mode button').forEach(button=>button.disabled=value||listening);
  $('form').querySelector('button').disabled=value;
 }
+function clearNotice(){
+ if(noticeTimer)clearTimeout(noticeTimer);
+ noticeTimer=null;
+ $('miclabel').classList.remove('notice-fade');
+}
 function idle(message='Hold to speak'){
  listening=false;
  mic.classList.remove('listening');
  mic.disabled=busy;
  document.querySelectorAll('.mode button').forEach(button=>button.disabled=busy);
+ clearNotice();
  setStatus('HOLD TO SPEAK',message);
+ if(message==='No speech captured. Hold to try again.'){
+  noticeTimer=setTimeout(()=>{$('miclabel').classList.add('notice-fade');},5650);
+  noticeTimer=setTimeout(()=>{$('miclabel').textContent='Hold to speak';$('miclabel').classList.remove('notice-fade');noticeTimer=null;},6000);
+ }
 }
 function setMode(next){
  if(busy||listening)return;
  mode=next;
  $('thEn').classList.toggle('active',mode==='th-en');
  $('enTh').classList.toggle('active',mode==='en-th');
- $('hint').textContent=mode==='th-en'?'Thai → English · Thai speaker':'English → Thai · English speaker';
 }
 $('thEn').onclick=()=>setMode('th-en');
 $('enTh').onclick=()=>setMode('en-th');
@@ -286,6 +293,8 @@ mic.addEventListener('pointerdown',event=>{
  if(event.button!==undefined&&event.button!==0)return;
  if(busy||pressActive)return;
  event.preventDefault();
+ clearNotice();
+ $('miclabel').textContent='Hold to speak';
  pressActive=true;
  mic.classList.add('held');
  try{mic.setPointerCapture(event.pointerId)}catch(error){}
