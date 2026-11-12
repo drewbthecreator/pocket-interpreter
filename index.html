@@ -51,7 +51,7 @@ button{cursor:pointer;touch-action:manipulation}
 button:disabled{opacity:.4;cursor:not-allowed}
 @media(max-width:380px){.app{padding-left:15px;padding-right:15px}header{padding-top:27px}.mode button{font-size:10px;letter-spacing:.05em}.mic{width:76px;height:76px}}
 </style></head>
-<body><div class="start-screen" id="startScreen"><div class="start-card"><h2>Ready to translate?</h2><p>Tap below to allow microphone access. Then choose who is speaking and tap the microphone to start and stop each turn.</p><button id="getStarted" type="button">GET STARTED</button><span class="start-note" id="startNote">Your browser will ask for microphone permission.</span></div></div><div class="app">
+<body><div class="app">
 <header><h1>THAI TRANSLATOR</h1><div class="status" id="status">TAP TO SPEAK</div></header>
 <div class="mode" role="group" aria-label="Translation direction"><button class="active" data-mode="en-th" id="enTh">ENGLISH SPEAKS</button><button data-mode="th-en" id="thEn">THAI SPEAKS</button></div>
 <main id="chat" aria-live="polite"><div class="empty" id="empty"><strong>Your conversation will appear here.</strong>Choose who is speaking, tap the microphone to start, then tap again to translate.</div></main>
@@ -295,14 +295,11 @@ async function requestMicPermission(){
   stream.getTracks().forEach(track=>track.stop());
   micPermissionGranted=true;
   setStatus('MIC READY','Tap to speak');
-  $('startScreen').hidden=true;
   mic.disabled=!supported;
   return true;
  }catch(error){
   console.warn('Microphone permission was not granted',error);
   setStatus('MICROPHONE ACCESS NEEDED','Allow microphone access, then tap to retry.');
-  $('startNote').textContent='Microphone access is needed. Check your browser settings, then tap Try Again.';
-  $('getStarted').textContent='TRY AGAIN';
   mic.disabled=!supported;
   return false;
  }
@@ -332,11 +329,10 @@ $('clear').onclick=()=>{
 if(!supported){
  mic.disabled=true;
  setStatus('VOICE UNAVAILABLE','Use the text box in this browser.');
- $('startNote').textContent='Voice input is not supported in this browser. You can still type and translate.';
- $('getStarted').textContent='CONTINUE';
- $('getStarted').onclick=()=>$('startScreen').hidden=true;
 }else{
- $('getStarted').addEventListener('click',requestMicPermission);
+ // Ask the browser for microphone permission as soon as the translator opens.
+ // Some iPhone browsers may defer the native prompt until the user taps the mic.
+ requestMicPermission();
 }
 if('serviceWorker'in navigator&&location.protocol.startsWith('http')){
  window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(error=>console.warn('Service worker registration failed',error)));
