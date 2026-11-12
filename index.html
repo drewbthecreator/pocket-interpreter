@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#090b12"><meta name="description" content="A simple English and Thai conversation translator.">
-<link rel="manifest" href="./manifest.json"><link rel="icon" href="./icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="./icon.svg"><meta name="apple-mobile-web-app-capable" content="yes"><title>Thai Translator</title>
+<meta name="theme-color" content="#090b12"><meta name="description" content="A simple English, Thai, and Lao conversation translator.">
+<link rel="manifest" href="./manifest.json"><link rel="icon" href="./icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="./icon.svg"><meta name="apple-mobile-web-app-capable" content="yes"><title>Conversation Translator</title>
 <style>
 :root{color-scheme:dark;--bg:#090a0c;--panel:#111315;--line:#292a27;--muted:#85857e;--text:#f3f0e8;--gold:#c6a96b;--gold-soft:#8e784d}
 *{box-sizing:border-box}
@@ -18,9 +18,9 @@ h1{font-size:17px;letter-spacing:.22em;margin:0;font-weight:650;color:#eee9dc}
 .loader-track{height:5px;border-radius:99px;background:#303946;overflow:hidden}
 .loader-progress{height:100%;width:38%;border-radius:99px;background:linear-gradient(90deg,#2878e5,#8bbcff);animation:translateLoad 1.15s ease-in-out infinite}
 @keyframes translateLoad{0%{transform:translateX(-110%)}100%{transform:translateX(280%)}}
-.mode{width:min(100%,430px);margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:8px;background:transparent;border:0;padding:0}
+.pairs{width:min(100%,430px);margin:0 auto 9px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}.pair{min-height:48px;display:flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--line);border-radius:9px;background:#101213;color:#a4a197;padding:8px 5px;font-size:10px;font-weight:650;letter-spacing:.035em;white-space:nowrap}.pair svg{width:14px;height:14px;flex:0 0 14px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}.pair.active{background:#292419;border-color:var(--gold-soft);color:#e8d4a6;box-shadow:inset 0 0 0 1px #8e784d30}.mode{width:min(100%,430px);margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:8px;background:transparent;border:0;padding:0}
 .mode button{min-height:49px;border:1px solid var(--line);background:#101213;color:#a4a197;border-radius:9px;padding:11px 8px;font-size:11px;letter-spacing:.09em;font-weight:650;transition:background .2s,border-color .2s,color .2s}
-.mode button.active[data-mode="en-th"],.mode button.active[data-mode="th-en"]{background:#292419;border-color:var(--gold-soft);color:#e8d4a6;box-shadow:inset 0 0 0 1px #8e784d30}
+.mode button.active{background:#292419;border-color:var(--gold-soft);color:#e8d4a6;box-shadow:inset 0 0 0 1px #8e784d30}
 #chat{flex:1;min-height:260px;max-height:54vh;overflow:auto;padding:18px 0 22px;display:flex;flex-direction:column;gap:12px}
 .mic-stage{flex:1;min-height:240px;display:flex;align-items:center;justify-content:center}
 .microw:empty{display:none}
@@ -61,8 +61,9 @@ button:disabled{opacity:.4;cursor:not-allowed}
 @media(max-width:380px){.app{padding-left:15px;padding-right:15px}header{padding-top:27px}.mode button{font-size:10px;letter-spacing:.05em}.mic{width:76px;height:76px}}
 </style></head>
 <body><div class="app">
-<header><h1>THAI TRANSLATOR</h1><div class="status" id="status" aria-hidden="true"></div></header>
-<div class="mode" role="group" aria-label="Translation direction"><button class="active" data-mode="en-th" id="enTh">ENGLISH SPEAKS</button><button data-mode="th-en" id="thEn">THAI SPEAKS</button></div>
+<header><h1>CONVERSATION TRANSLATOR</h1><div class="status" id="status" aria-hidden="true"></div></header>
+<div class="pairs" role="group" aria-label="Choose language pair"><button class="pair active" data-pair="en-th"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="2.5" width="6" height="12" rx="3"></rect><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3.5M9 21.5h6"></path></svg>EN ↔ TH</button><button class="pair" data-pair="en-lo"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="2.5" width="6" height="12" rx="3"></rect><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3.5M9 21.5h6"></path></svg>EN ↔ LO</button><button class="pair" data-pair="th-lo"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="2.5" width="6" height="12" rx="3"></rect><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3.5M9 21.5h6"></path></svg>TH ↔ LO</button></div>
+<div class="mode" role="group" aria-label="Speaking direction"><button class="active" data-direction="forward" id="forwardBtn">ENGLISH → THAI</button><button data-direction="reverse" id="reverseBtn">THAI → ENGLISH</button></div>
 <div class="translation-loader" id="translationLoader" aria-live="polite" aria-hidden="true"><span id="translationText">TRANSLATING</span><div class="loader-track"><div class="loader-progress"></div></div></div>
 <main id="chat" aria-live="polite"><div class="mic-stage" id="micStage"><button class="mic" id="mic" aria-label="Start speaking" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="2.5" width="6" height="12" rx="3"></rect><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3.5M9 21.5h6"></path></svg></button><div class="start-hint" id="startHint">Tap to start</div></div></main>
 <section class="controls"><div class="microw" id="micDock"><div class="miclabel" id="miclabel" aria-hidden="true"> </div></div>
@@ -73,7 +74,7 @@ button:disabled{opacity:.4;cursor:not-allowed}
 (()=>{
 'use strict';
 const $=id=>document.getElementById(id);
-let mode='en-th',recognition=null,listening=false,starting=false,busy=false,gotResult=false,stopRequested=false,recognitionError='',capturedText='',interimText='',recognitionEnded=false,noticeTimer=null;
+let pair='en-th',direction='forward',recognition=null,listening=false,starting=false,busy=false,gotResult=false,stopRequested=false,recognitionError='',capturedText='',interimText='',recognitionEnded=false,noticeTimer=null;
 const chat=$('chat'),mic=$('mic'),status=$('status');
 const SpeechRecognition=window.SpeechRecognition||window.webkitSpeechRecognition;
 const supported=!!SpeechRecognition;
@@ -99,7 +100,7 @@ function setBusy(value){
  busy=value;
  mic.disabled=value;
  $('typed').disabled=value;
- document.querySelectorAll('.mode button').forEach(button=>button.disabled=value||listening);
+ document.querySelectorAll('.mode button,.pair').forEach(button=>button.disabled=value||listening);
  $('form').querySelector('button').disabled=value;
 }
 function clearNotice(){
@@ -111,7 +112,7 @@ function idle(message=''){
  listening=false;
  mic.classList.remove('listening');
  mic.disabled=busy;
- document.querySelectorAll('.mode button').forEach(button=>button.disabled=busy);
+ document.querySelectorAll('.mode button,.pair').forEach(button=>button.disabled=busy);
  clearNotice();
  setStatus('TAP TO SPEAK',message);
  if(message==='No speech captured. Tap to try again.'){
@@ -119,15 +120,18 @@ function idle(message=''){
   noticeTimer=setTimeout(()=>{$('miclabel').textContent='Tap to speak';$('miclabel').classList.remove('notice-fade');noticeTimer=null;},6000);
  }
 }
-function setMode(next){
- if(busy||listening)return;
- mode=next;
- $('thEn').classList.toggle('active',mode==='th-en');
- $('enTh').classList.toggle('active',mode==='en-th');
-}
-$('thEn').onclick=()=>setMode('th-en');
-$('enTh').onclick=()=>setMode('en-th');
-function langs(){return mode==='th-en'?['th-TH','en']:['en-US','th']}
+const pairInfo={
+ 'en-th':[{speech:'en-US',api:'en',label:'ENGLISH'},{speech:'th-TH',api:'th',label:'THAI'}],
+ 'en-lo':[{speech:'en-US',api:'en',label:'ENGLISH'},{speech:'lo-LA',api:'lo',label:'LAO'}],
+ 'th-lo':[{speech:'th-TH',api:'th',label:'THAI'},{speech:'lo-LA',api:'lo',label:'LAO'}]
+};
+function updateDirectionLabels(){const [first,second]=pairInfo[pair];$('forwardBtn').textContent=first.label+' → '+second.label;$('reverseBtn').textContent=second.label+' → '+first.label;}
+function setPair(next){if(busy||listening||starting)return;pair=next;document.querySelectorAll('.pair').forEach(button=>button.classList.toggle('active',button.dataset.pair===pair));updateDirectionLabels();}
+function setDirection(next){if(busy||listening||starting)return;direction=next;$('forwardBtn').classList.toggle('active',direction==='forward');$('reverseBtn').classList.toggle('active',direction==='reverse');}
+document.querySelectorAll('.pair').forEach(button=>button.addEventListener('click',()=>setPair(button.dataset.pair)));
+$('forwardBtn').onclick=()=>setDirection('forward');$('reverseBtn').onclick=()=>setDirection('reverse');
+function langs(){const [first,second]=pairInfo[pair];const source=direction==='forward'?first:second;const target=direction==='forward'?second:first;return [source.speech,target.speech,source.api,target.api,source.label,target.label];}
+updateDirectionLabels();
 function speak(text,lang){
  if(!('speechSynthesis'in window))return Promise.resolve();
  return new Promise(resolve=>{
@@ -146,8 +150,8 @@ function speak(text,lang){
  });
 }
 async function translate(text){
- const[source,target]=langs();
- const url='https://translate.googleapis.com/translate_a/single?client=gtx&sl='+source+'&tl='+target+'&dt=t&q='+encodeURIComponent(text);
+ const[, ,sourceCode,targetCode]=langs();
+ const url='https://translate.googleapis.com/translate_a/single?client=gtx&sl='+sourceCode+'&tl='+targetCode+'&dt=t&q='+encodeURIComponent(text);
  const controller=new AbortController();
  const timeout=setTimeout(()=>controller.abort(),15000);
  try{
@@ -160,9 +164,9 @@ async function translate(text){
  }finally{clearTimeout(timeout)}
 }
 function addMessage(original,translated,sourceLang,targetLang){
- const side=mode==='th-en'?'left':'right';
+ const side=direction==='reverse'?'left':'right';
  const bubble=document.createElement('article');bubble.className='message '+side;
- const tag=document.createElement('div');tag.className='tag';tag.textContent=sourceLang==='th-TH'?'THAI · ORIGINAL':'ENGLISH · ORIGINAL';
+ const tag=document.createElement('div');tag.className='tag';tag.textContent=sourceLang+' · ORIGINAL';
  const orig=document.createElement('div');orig.className='original';orig.textContent=original;
  const trans=document.createElement('div');trans.className='translated';trans.textContent=translated;
  const actions=document.createElement('div');actions.className='bubble-actions';
@@ -173,12 +177,12 @@ function addMessage(original,translated,sourceLang,targetLang){
 async function handleText(value){
  const clean=value.trim();
  if(!clean||busy)return;
- const[source,target]=langs();
+ const[source,target,,,sourceLabel,targetLabel]=langs();
  dockMic();
  setBusy(true);setStatus('TRANSLATING','Translating…');
  try{
   const translated=await translate(clean);
-  addMessage(clean,translated,source,target);
+  addMessage(clean,translated,sourceLabel,targetLabel);
   setStatus('SPEAKING','Speaking translation…');
   await speak(translated,target);
   idle();
@@ -188,7 +192,7 @@ async function handleText(value){
   mic.disabled=false;
   $('typed').disabled=false;
   $('form').querySelector('button').disabled=false;
-  document.querySelectorAll('.mode button').forEach(button=>button.disabled=false);
+  document.querySelectorAll('.mode button,.pair').forEach(button=>button.disabled=false);
  }finally{
   setBusy(false);
   if(!listening&&status.textContent==='TRANSLATING')idle();
@@ -247,7 +251,7 @@ function startListening(){
  starting=true;
  mic.disabled=busy;
  mic.setAttribute('aria-label','Starting microphone');
- document.querySelectorAll('.mode button').forEach(button=>button.disabled=true);
+ document.querySelectorAll('.mode button,.pair').forEach(button=>button.disabled=true);
  setStatus('STARTING','Starting microphone…');
  instance.onstart=()=>{
   starting=false;
