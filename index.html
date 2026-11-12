@@ -34,7 +34,8 @@ h1{font-size:17px;letter-spacing:.22em;margin:0;font-weight:650;color:#eee9dc}
 .bubble-actions{display:flex;justify-content:flex-end;margin-top:7px}
 .bubble-actions button{background:#ffffff20;border:1px solid currentColor;color:inherit;border-radius:99px;padding:5px 10px;font-size:10px;letter-spacing:.02em}
 .controls{position:sticky;bottom:0;background:linear-gradient(180deg,transparent,var(--bg) 12%);padding:20px 0 calc(16px + env(safe-area-inset-bottom))}
-.microw{width:100%;display:flex;justify-content:center;align-items:center;text-align:center;margin:0 0 20px}.microw>div{width:100%;display:flex;flex-direction:column;align-items:center}.mic{display:grid;margin-inline:auto;touch-action:none;user-select:none;-webkit-user-select:none}
+.microw{width:100%;display:flex;justify-content:center;align-items:center;text-align:center;margin:0 0 20px}
+.microw:not(.has-mic){display:none}.microw>div{width:100%;display:flex;flex-direction:column;align-items:center}.mic{display:grid;margin-inline:auto;touch-action:none;user-select:none;-webkit-user-select:none}
 .mic{width:108px;height:108px;display:grid;place-items:center;border-radius:50%;border:1px solid var(--gold-soft);background:radial-gradient(circle at 35% 25%,#39301f,#171612 70%);color:#e3cf9f;font-size:0;box-shadow:0 0 0 9px #c6a96b0d,0 14px 36px #0008;transition:width .3s ease,height .3s ease,box-shadow .3s ease}
 .mic.docked{width:94px;height:94px}
 .mic svg{width:38px;height:38px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
