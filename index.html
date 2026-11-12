@@ -11,13 +11,19 @@ body{margin:0;background:radial-gradient(ellipse at 50% -18%,#29251b 0,transpare
 .start-screen{position:fixed;inset:0;z-index:20;display:grid;place-items:center;padding:28px;background:radial-gradient(ellipse at 50% 15%,#29251b 0,transparent 48%),#090a0c}.start-screen[hidden]{display:none}.start-card{width:min(100%,420px);text-align:center;padding:32px 24px;border:1px solid #393326;border-radius:16px;background:#111315;box-shadow:0 24px 80px #0009}.start-card h2{margin:0 0 12px;color:#eee9dc;font-size:22px;font-weight:600}.start-card p{margin:0 auto 24px;max-width:310px;color:#a7a398;font-size:13px;line-height:1.7}.start-card button{width:100%;min-height:50px;border:1px solid var(--gold-soft);border-radius:9px;background:#292419;color:#e8d4a6;font-size:12px;font-weight:700;letter-spacing:.12em}.start-note{display:block;margin-top:13px;color:#77766f;font-size:10px;line-height:1.6}.app{max-width:660px;margin:auto;min-height:100vh;display:flex;flex-direction:column;padding:env(safe-area-inset-top) 20px env(safe-area-inset-bottom)}
 header{padding:34px 0 25px;display:flex;flex-direction:column;align-items:center;gap:9px;text-align:center}
 h1{font-size:17px;letter-spacing:.22em;margin:0;font-weight:650;color:#eee9dc}
-.status{font-size:9px;letter-spacing:.16em;color:var(--gold);border:1px solid #514630;padding:6px 10px;border-radius:99px;margin-top:3px}
+.status{display:none}
+.translation-loader{display:none;width:min(100%,430px);margin:14px auto 0;padding:14px 17px;border:1px solid #343a43;border-radius:12px;background:#151a21;box-shadow:0 8px 24px #0003}
+.translation-loader.active{display:block}
+.translation-loader span{display:block;text-align:center;color:#e7edf7;font-size:16px;font-weight:650;letter-spacing:.12em;margin-bottom:11px}
+.loader-track{height:5px;border-radius:99px;background:#303946;overflow:hidden}
+.loader-progress{height:100%;width:38%;border-radius:99px;background:linear-gradient(90deg,#2878e5,#8bbcff);animation:translateLoad 1.15s ease-in-out infinite}
+@keyframes translateLoad{0%{transform:translateX(-110%)}100%{transform:translateX(280%)}}
 .mode{width:min(100%,430px);margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:8px;background:transparent;border:0;padding:0}
 .mode button{min-height:49px;border:1px solid var(--line);background:#101213;color:#a4a197;border-radius:9px;padding:11px 8px;font-size:11px;letter-spacing:.09em;font-weight:650;transition:background .2s,border-color .2s,color .2s}
 .mode button.active[data-mode="en-th"],.mode button.active[data-mode="th-en"]{background:#292419;border-color:var(--gold-soft);color:#e8d4a6;box-shadow:inset 0 0 0 1px #8e784d30}
-#chat{flex:1;min-height:220px;max-height:54vh;overflow:auto;padding:18px 0 22px;display:flex;flex-direction:column;gap:12px}
-.empty{margin:auto;text-align:center;color:#85857e;line-height:1.7;padding:28px 20px;font-size:13px}
-.empty strong{display:block;color:#e5dfd1;font-size:15px;font-weight:550;margin-bottom:7px}
+#chat{flex:1;min-height:260px;max-height:54vh;overflow:auto;padding:18px 0 22px;display:flex;flex-direction:column;gap:12px}
+.mic-stage{flex:1;min-height:240px;display:flex;align-items:center;justify-content:center}
+.microw:empty{display:none}
 .message{position:relative;max-width:86%;padding:12px 16px 11px;border-radius:19px;line-height:1.45;overflow-wrap:anywhere;box-shadow:0 2px 8px #0002}
 .message.left{align-self:flex-start;border-bottom-left-radius:5px;background:#e5e7eb;border:1px solid #d1d5db;color:#20242b}
 .message.right{align-self:flex-end;border-bottom-right-radius:5px;background:#2878e5;border:1px solid #2878e5;color:#fff}
@@ -29,12 +35,12 @@ h1{font-size:17px;letter-spacing:.22em;margin:0;font-weight:650;color:#eee9dc}
 .bubble-actions button{background:#ffffff20;border:1px solid currentColor;color:inherit;border-radius:99px;padding:5px 10px;font-size:10px;letter-spacing:.02em}
 .controls{position:sticky;bottom:0;background:linear-gradient(180deg,transparent,var(--bg) 12%);padding:20px 0 calc(16px + env(safe-area-inset-bottom))}
 .microw{width:100%;display:flex;justify-content:center;align-items:center;text-align:center;margin:0 0 20px}.microw>div{width:100%;display:flex;flex-direction:column;align-items:center}.mic{display:grid;margin-inline:auto;touch-action:none;user-select:none;-webkit-user-select:none}
-.mic{width:82px;height:82px;display:grid;place-items:center;border-radius:50%;border:1px solid var(--gold-soft);background:radial-gradient(circle at 35% 25%,#39301f,#171612 70%);color:#e3cf9f;font-size:0;box-shadow:0 0 0 7px #c6a96b0d,0 12px 32px #0008}
-.mic svg{width:26px;height:26px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.mic{width:108px;height:108px;display:grid;place-items:center;border-radius:50%;border:1px solid var(--gold-soft);background:radial-gradient(circle at 35% 25%,#39301f,#171612 70%);color:#e3cf9f;font-size:0;box-shadow:0 0 0 9px #c6a96b0d,0 14px 36px #0008;transition:width .3s ease,height .3s ease,box-shadow .3s ease}
+.mic.docked{width:94px;height:94px}
+.mic svg{width:38px;height:38px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
 .mic.listening,.mic.held{background:radial-gradient(circle at 35% 25%,#8f2424,#3b1010 72%);border-color:#ff5a52;color:#fff0ed;box-shadow:0 0 0 9px #e33b351c,0 12px 32px #0008;animation:holdPulse 1s infinite}
 @keyframes holdPulse{50%{box-shadow:0 0 0 16px #e33b3510,0 12px 32px #0008;border-color:#ff8982}}
-.miclabel{text-align:center;color:#b7ad96;font-size:11px;letter-spacing:.04em;margin-top:11px;opacity:1;transition:opacity .35s ease}
-.miclabel.notice-fade{opacity:0}
+.miclabel{display:none}
 .compose{display:flex;gap:8px}
 .compose input{flex:1;min-width:0;background:#111315;border:1px solid var(--line);border-radius:9px;padding:14px;color:var(--text);font-size:15px;outline:none}
 .compose input:focus{border-color:var(--gold-soft)}
@@ -52,10 +58,11 @@ button:disabled{opacity:.4;cursor:not-allowed}
 @media(max-width:380px){.app{padding-left:15px;padding-right:15px}header{padding-top:27px}.mode button{font-size:10px;letter-spacing:.05em}.mic{width:76px;height:76px}}
 </style></head>
 <body><div class="app">
-<header><h1>THAI TRANSLATOR</h1><div class="status" id="status">TAP TO SPEAK</div></header>
+<header><h1>THAI TRANSLATOR</h1><div class="status" id="status" aria-hidden="true"></div></header>
 <div class="mode" role="group" aria-label="Translation direction"><button class="active" data-mode="en-th" id="enTh">ENGLISH SPEAKS</button><button data-mode="th-en" id="thEn">THAI SPEAKS</button></div>
-<main id="chat" aria-live="polite"><div class="empty" id="empty"><strong>Your conversation will appear here.</strong>Choose who is speaking, tap the microphone to start, then tap again to translate.</div></main>
-<section class="controls"><div class="microw"><div><button class="mic" id="mic" aria-label="Tap to speak" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="2.5" width="6" height="12" rx="3"></rect><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3.5M9 21.5h6"></path></svg></button><div class="miclabel" id="miclabel">Tap to speak</div></div></div>
+<div class="translation-loader" id="translationLoader" aria-live="polite" aria-hidden="true"><span id="translationText">TRANSLATING</span><div class="loader-track"><div class="loader-progress"></div></div></div>
+<main id="chat" aria-live="polite"><div class="mic-stage" id="micStage"><button class="mic" id="mic" aria-label="Start speaking" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="2.5" width="6" height="12" rx="3"></rect><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3.5M9 21.5h6"></path></svg></button></div></main>
+<section class="controls"><div class="microw" id="micDock"><div class="miclabel" id="miclabel" aria-hidden="true"> </div></div>
 <form class="compose" id="form"><input id="typed" autocomplete="off" placeholder="Or type a sentence…" aria-label="Type a sentence"><button class="send" type="submit">Send</button></form>
 <div class="bottom"><button id="clear" type="button">Clear conversation</button><span id="voicehelp" aria-live="polite">One turn at a time</span></div>
 </section><details class="requirements"><summary>REQUIREMENTS</summary><p>Internet is required for translation. Tap the microphone to start speaking, then tap it again when you’re done. The app translates and reads the result aloud. Keep the phone between both speakers. Voice input depends on browser support and microphone permission. For important conversations, use a qualified interpreter.</p></details></div>
@@ -69,7 +76,20 @@ const SpeechRecognition=window.SpeechRecognition||window.webkitSpeechRecognition
 const supported=!!SpeechRecognition;
 function setStatus(value,label){
  status.textContent=value;
+ const loader=$('translationLoader');
+ const show=value==='TRANSLATING';
+ loader.classList.toggle('active',show);
+ loader.setAttribute('aria-hidden',String(!show));
+ if(show)$('translationText').textContent='TRANSLATING…';
  if(label)$('miclabel').textContent=label;
+}
+function dockMic(){
+ const dock=$('micDock');
+ if(mic.parentElement!==dock){
+  dock.append(mic);
+  mic.classList.add('docked');
+  $('micStage').hidden=true;
+ }
 }
 function setBusy(value){
  busy=value;
@@ -83,7 +103,7 @@ function clearNotice(){
  noticeTimer=null;
  $('miclabel').classList.remove('notice-fade');
 }
-function idle(message='Tap to speak'){
+function idle(message=''){
  listening=false;
  mic.classList.remove('listening');
  mic.disabled=busy;
@@ -136,7 +156,6 @@ async function translate(text){
  }finally{clearTimeout(timeout)}
 }
 function addMessage(original,translated,sourceLang,targetLang){
- $('empty')?.remove();
  const side=mode==='th-en'?'left':'right';
  const bubble=document.createElement('article');bubble.className='message '+side;
  const tag=document.createElement('div');tag.className='tag';tag.textContent=sourceLang==='th-TH'?'THAI · ORIGINAL':'ENGLISH · ORIGINAL';
@@ -151,6 +170,7 @@ async function handleText(value){
  const clean=value.trim();
  if(!clean||busy)return;
  const[source,target]=langs();
+ dockMic();
  setBusy(true);setStatus('TRANSLATING','Translating…');
  try{
   const translated=await translate(clean);
@@ -270,7 +290,7 @@ function startListening(){
   unlockMic();
   if(stopRequested){
    if(gotResult)processCapturedSpeech();
-   else idle('No speech captured. Hold to try again.');
+   else idle('No speech captured. Tap to try again.');
   }else if(!recognitionError){
    if(gotResult)processCapturedSpeech();
    else idle('No speech captured. Tap to try again.');
@@ -338,7 +358,7 @@ $('form').onsubmit=event=>{
  handleText(value);
 };
 $('clear').onclick=()=>{
- chat.innerHTML='<div class="empty" id="empty"><strong>Your conversation will appear here.</strong>Choose who is speaking, tap the microphone to start, then tap again to translate.</div>';
+ chat.querySelectorAll('.message').forEach(message=>message.remove());
 };
 if(!supported){
  mic.disabled=true;
