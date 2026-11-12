@@ -52,18 +52,18 @@ button:disabled{opacity:.4;cursor:not-allowed}
 @media(max-width:380px){.app{padding-left:15px;padding-right:15px}header{padding-top:27px}.mode button{font-size:10px;letter-spacing:.05em}.mic{width:76px;height:76px}}
 </style></head>
 <body><div class="app">
-<header><h1>THAI TRANSLATOR</h1><div class="status" id="status">HOLD TO SPEAK</div></header>
+<header><h1>THAI TRANSLATOR</h1><div class="status" id="status">TAP TO SPEAK</div></header>
 <div class="mode" role="group" aria-label="Translation direction"><button class="active" data-mode="en-th" id="enTh">ENGLISH SPEAKS</button><button data-mode="th-en" id="thEn">THAI SPEAKS</button></div>
-<main id="chat" aria-live="polite"><div class="empty" id="empty"><strong>Your conversation will appear here.</strong>Choose who is speaking, hold the microphone while you talk, then release it to translate.</div></main>
-<section class="controls"><div class="microw"><div><button class="mic" id="mic" aria-label="Hold to speak"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="2.5" width="6" height="12" rx="3"></rect><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3.5M9 21.5h6"></path></svg></button><div class="miclabel" id="miclabel">Hold to speak</div></div></div>
+<main id="chat" aria-live="polite"><div class="empty" id="empty"><strong>Your conversation will appear here.</strong>Choose who is speaking, tap the microphone to start, then tap again to translate.</div></main>
+<section class="controls"><div class="microw"><div><button class="mic" id="mic" aria-label="Tap to speak" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="2.5" width="6" height="12" rx="3"></rect><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3.5M9 21.5h6"></path></svg></button><div class="miclabel" id="miclabel">Tap to speak</div></div></div>
 <form class="compose" id="form"><input id="typed" autocomplete="off" placeholder="Or type a sentence…" aria-label="Type a sentence"><button class="send" type="submit">Send</button></form>
 <div class="bottom"><button id="clear" type="button">Clear conversation</button><span id="voicehelp" aria-live="polite">One turn at a time</span></div>
-</section><details class="requirements"><summary>REQUIREMENTS</summary><p>Internet is required for translation. Press and hold the microphone while speaking, then release it. The app translates and reads the result aloud. Keep the phone between both speakers. Voice input depends on browser support and microphone permission. For important conversations, use a qualified interpreter.</p></details></div>
+</section><details class="requirements"><summary>REQUIREMENTS</summary><p>Internet is required for translation. Tap the microphone to start speaking, then tap it again when you’re done. The app translates and reads the result aloud. Keep the phone between both speakers. Voice input depends on browser support and microphone permission. For important conversations, use a qualified interpreter.</p></details></div>
 <script>
 (()=>{
 'use strict';
 const $=id=>document.getElementById(id);
-let mode='en-th',recognition=null,listening=false,starting=false,busy=false,gotResult=false,stopRequested=false,recognitionError='',capturedText='',interimText='',recognitionEnded=false,pressActive=false,keyboardPress=false,noticeTimer=null;
+let mode='en-th',recognition=null,listening=false,starting=false,busy=false,gotResult=false,stopRequested=false,recognitionError='',capturedText='',interimText='',recognitionEnded=false,noticeTimer=null;
 const chat=$('chat'),mic=$('mic'),status=$('status');
 const SpeechRecognition=window.SpeechRecognition||window.webkitSpeechRecognition;
 const supported=!!SpeechRecognition;
@@ -83,16 +83,16 @@ function clearNotice(){
  noticeTimer=null;
  $('miclabel').classList.remove('notice-fade');
 }
-function idle(message='Hold to speak'){
+function idle(message='Tap to speak'){
  listening=false;
  mic.classList.remove('listening');
  mic.disabled=busy;
  document.querySelectorAll('.mode button').forEach(button=>button.disabled=busy);
  clearNotice();
- setStatus('HOLD TO SPEAK',message);
- if(message==='No speech captured. Hold to try again.'){
+ setStatus('TAP TO SPEAK',message);
+ if(message==='No speech captured. Tap to try again.'){
   noticeTimer=setTimeout(()=>{$('miclabel').classList.add('notice-fade');},5650);
-  noticeTimer=setTimeout(()=>{$('miclabel').textContent='Hold to speak';$('miclabel').classList.remove('notice-fade');noticeTimer=null;},6000);
+  noticeTimer=setTimeout(()=>{$('miclabel').textContent='Tap to speak';$('miclabel').classList.remove('notice-fade');noticeTimer=null;},6000);
  }
 }
 function setMode(next){
@@ -176,7 +176,7 @@ function unlockMic(){
  starting=false;
  mic.classList.remove('listening');
  mic.disabled=busy;
- mic.setAttribute('aria-label','Hold to speak');
+ mic.setAttribute('aria-label','Tap to speak');
  mic.setAttribute('aria-pressed','false');
  document.querySelectorAll('.mode button').forEach(button=>button.disabled=busy);
 }
@@ -233,10 +233,10 @@ function startListening(){
    return;
   }
   mic.disabled=false;
-  mic.setAttribute('aria-label','Release to translate');
+  mic.setAttribute('aria-label','Tap to stop and translate');
   mic.setAttribute('aria-pressed','true');
   mic.classList.add('listening');
-  setStatus('LISTENING','Release when you’re done');
+  setStatus('LISTENING','Tap again when you’re done');
  };
  instance.onresult=event=>{
   interimText='';
@@ -258,7 +258,7 @@ function startListening(){
    'service-not-allowed':'Voice input is blocked by this browser.',
    'audio-capture':'No microphone was found.',
    'network':'Voice recognition needs internet access. Check your connection.',
-   'no-speech':'No speech detected. Hold the microphone while speaking.',
+   'no-speech':'No speech detected. Tap the microphone to try again.',
    'language-not-supported':'This browser does not support the selected speech language.',
    'bad-grammar':'Speech recognition could not process that request.'
   };
@@ -272,8 +272,8 @@ function startListening(){
    if(gotResult)processCapturedSpeech();
    else idle('No speech captured. Hold to try again.');
   }else if(!recognitionError){
-   if(gotResult)idle('Speech captured. Release to translate.');
-   else idle('Voice input ended. Hold to try again.');
+   if(gotResult)processCapturedSpeech();
+   else idle('No speech captured. Tap to try again.');
   }
   stopRequested=false;
  };
@@ -283,35 +283,12 @@ function startListening(){
   setStatus('VOICE INPUT ERROR','Could not start microphone. Check permissions and try again.');
  }
 }
-function releaseHold(){
- if(!pressActive)return;
- pressActive=false;
- mic.classList.remove('held');
- stopListening();
-}
-mic.addEventListener('pointerdown',event=>{
- if(event.button!==undefined&&event.button!==0)return;
- if(busy||pressActive)return;
- event.preventDefault();
+mic.addEventListener('click',()=>{
+ if(busy)return;
  clearNotice();
- $('miclabel').textContent='Hold to speak';
- pressActive=true;
- mic.classList.add('held');
- try{mic.setPointerCapture(event.pointerId)}catch(error){}
+ if(listening||starting){stopListening();return;}
+ $('miclabel').textContent='Listening…';
  startListening();
-});
-mic.addEventListener('pointerup',event=>{event.preventDefault();releaseHold()});
-mic.addEventListener('pointercancel',releaseHold);
-mic.addEventListener('lostpointercapture',releaseHold);
-mic.addEventListener('keydown',event=>{
- if((event.key===' '||event.key==='Enter')&&!event.repeat&&!keyboardPress){
-  event.preventDefault();keyboardPress=true;mic.classList.add('held');startListening();
- }
-});
-mic.addEventListener('keyup',event=>{
- if((event.key===' '||event.key==='Enter')&&keyboardPress){
-  event.preventDefault();keyboardPress=false;mic.classList.remove('held');stopListening();
- }
 });
 $('form').onsubmit=event=>{
  event.preventDefault();
@@ -322,7 +299,7 @@ $('form').onsubmit=event=>{
  handleText(value);
 };
 $('clear').onclick=()=>{
- chat.innerHTML='<div class="empty" id="empty"><strong>Your conversation will appear here.</strong>Choose who is speaking, hold the microphone while you talk, then release it to translate.</div>';
+ chat.innerHTML='<div class="empty" id="empty"><strong>Your conversation will appear here.</strong>Choose who is speaking, tap the microphone to start, then tap again to translate.</div>';
 };
 if(!supported){
  mic.disabled=true;
