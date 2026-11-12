@@ -73,7 +73,7 @@ function setStatus(value,label){
 }
 function setBusy(value){
  busy=value;
- mic.disabled=value||listening;
+ mic.disabled=value;
  $('typed').disabled=value;
  document.querySelectorAll('.mode button').forEach(button=>button.disabled=value||listening);
  $('form').querySelector('button').disabled=value;
@@ -195,14 +195,14 @@ function stopListening(){
  }
  stopRequested=true;
  mic.disabled=true;
- setStatus('STOPPING','Releasing…');
+ setStatus('STOPPING','Stopping microphone…');
  if(starting)return;
  try{recognition.stop()}catch(error){
   console.warn('Could not stop speech recognition cleanly',error);
   recognitionEnded=true;
   unlockMic();
   if(gotResult)processCapturedSpeech();
-  else idle('No speech captured. Hold to try again.');
+  else idle('No speech captured. Tap to try again.');
  }
 }
 function startListening(){
@@ -283,9 +283,34 @@ function startListening(){
   setStatus('VOICE INPUT ERROR','Could not start microphone. Check permissions and try again.');
  }
 }
-mic.addEventListener('click',()=>{
+let micPermissionGranted=false;
+async function requestMicPermission(){
+ if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){
+  setStatus('MIC PERMISSION UNAVAILABLE','This browser cannot request microphone access here.');
+  return false;
+ }
+ setStatus('MICROPHONE SETUP','Allow microphone access when your browser asks.');
+ try{
+  const stream=await navigator.mediaDevices.getUserMedia({audio:true});
+  stream.getTracks().forEach(track=>track.stop());
+  micPermissionGranted=true;
+  setStatus('MIC READY','Tap to speak');
+  mic.disabled=!supported;
+  return true;
+ }catch(error){
+  console.warn('Microphone permission was not granted',error);
+  setStatus('MICROPHONE ACCESS NEEDED','Allow microphone access, then tap to retry.');
+  mic.disabled=!supported;
+  return false;
+ }
+}
+mic.addEventListener('click',async()=>{
  if(busy)return;
  clearNotice();
+ if(!micPermissionGranted){
+  await requestMicPermission();
+  return;
+ }
  if(listening||starting){stopListening();return;}
  $('miclabel').textContent='Listening…';
  startListening();
@@ -304,6 +329,8 @@ $('clear').onclick=()=>{
 if(!supported){
  mic.disabled=true;
  setStatus('VOICE UNAVAILABLE','Use the text box in this browser.');
+}else{
+ requestMicPermission();
 }
 if('serviceWorker'in navigator&&location.protocol.startsWith('http')){
  window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(error=>console.warn('Service worker registration failed',error)));
