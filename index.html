@@ -48,11 +48,11 @@ button:disabled{opacity:.4;cursor:not-allowed}
 @media(max-width:380px){.app{padding-left:15px;padding-right:15px}header{padding-top:27px}.mode button{font-size:10px;letter-spacing:.05em}.mic{width:76px;height:76px}}
 </style></head>
 <body><div class="app">
-<header><div><h1>THAI TRANSLATOR</h1><div class="sub">Thai ↔ English · Conversation mode</div></div><div class="status" id="status">READY</div></header>
+<header><div><h1>THAI TRANSLATOR</h1><div class="sub">Thai ↔ English · Conversation mode</div></div><div class="status" id="status">PRESS TO SPEAK</div></header>
 <div class="mode" role="group" aria-label="Translation direction"><button class="active" data-mode="en-th" id="enTh">ENGLISH SPEAKS</button><button data-mode="th-en" id="thEn">THAI SPEAKS</button></div>
 <div class="hint" id="hint">English → Thai · Tap the microphone and speak</div>
 <main id="chat" aria-live="polite"><div class="empty" id="empty"><strong>Your conversation will appear here.</strong>Choose who is speaking, then tap the microphone once. It will listen, translate, speak, and listen again automatically.</div></main>
-<section class="controls"><div class="microw"><div><button class="mic" id="mic" aria-label="Start hands-free listening"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="2.5" width="6" height="12" rx="3"></rect><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3.5M9 21.5h6"></path></svg></button><div class="miclabel" id="miclabel">Tap once to start hands-free</div></div></div>
+<section class="controls"><div class="microw"><div><button class="mic" id="mic" aria-label="Start hands-free listening"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="2.5" width="6" height="12" rx="3"></rect><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3.5M9 21.5h6"></path></svg></button><div class="miclabel" id="miclabel">Press to speak</div></div></div>
 <form class="compose" id="form"><input id="typed" autocomplete="off" placeholder="Or type a sentence…" aria-label="Type a sentence"><button class="send" type="submit">Send</button></form>
 <div class="bottom"><button id="clear">Clear conversation</button><button id="stop" disabled>Stop listening</button></div>
 <div class="note">Internet is required for translation. Speak one turn at a time. The browser detects the pause at the end, plays the translation, then listens again. Keep the phone between both speakers. Voice input depends on browser support and microphone permission. For important conversations, use a qualified interpreter.</div></section></div>
@@ -114,7 +114,7 @@ function beginRecognition(){
  recognition.onstart=()=>{
   listening=true;mic.classList.add('listening');
   $('miclabel').textContent='Listening · tap to pause';
-  status.textContent='LISTENING';$('stop').disabled=false;
+  status.textContent='LISTENING';$('miclabel').textContent='Listening…';$('stop').disabled=false;
  };
  recognition.onresult=e=>{
   const text=e.results?.[0]?.[0]?.transcript;
@@ -128,7 +128,7 @@ function beginRecognition(){
  };
  recognition.onend=()=>{
   listening=false;
-  if(!handsFree){mic.classList.remove('listening');$('miclabel').textContent='Tap once to start hands-free';$('stop').disabled=true;if(status.textContent==='LISTENING')status.textContent='READY';return;}
+  if(!handsFree){mic.classList.remove('listening');$('miclabel').textContent='Press to speak';$('stop').disabled=true;if(status.textContent==='LISTENING')status.textContent='PRESS TO SPEAK';return;}
   if(!busy)setTimeout(beginRecognition,350);
  };
  try{recognition.start()}catch(e){listening=false;if(handsFree)setTimeout(beginRecognition,700);}
@@ -173,7 +173,7 @@ $('clear').onclick=()=>{
  if(listening||handsFree)stopListening();
  chat.innerHTML='<div class="empty" id="empty"><strong>Your conversation will appear here.</strong>Choose who is speaking, then tap the microphone once. It will listen, translate, speak, and listen again automatically.</div>';
 };
-if(!supported)$('miclabel').textContent='Voice input unavailable · use text';
+if(!supported){$('miclabel').textContent='Voice input unavailable · use text';status.textContent='VOICE UNAVAILABLE';}
 if('serviceWorker'in navigator&&location.protocol.startsWith('http'))window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
 })();
 </script></body></html>
