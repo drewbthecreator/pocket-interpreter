@@ -206,7 +206,7 @@ function unlockMic(){
  mic.disabled=busy;
  mic.setAttribute('aria-label','Tap to speak');
  mic.setAttribute('aria-pressed','false');
- document.querySelectorAll('.mode button').forEach(button=>button.disabled=busy);
+ document.querySelectorAll('.mode button,.pair').forEach(button=>button.disabled=busy);
 }
 function processCapturedSpeech(){
  const transcript=(capturedText+' '+interimText).trim();
