@@ -42,7 +42,12 @@ h1{font-size:17px;letter-spacing:.22em;margin:0;font-weight:650;color:#eee9dc}
 .send{border:1px solid var(--gold-soft);border-radius:9px;background:#292419;color:#e8d4a6;padding:0 17px;font-size:11px;letter-spacing:.08em;font-weight:700}
 .bottom{display:flex;justify-content:space-between;align-items:center;margin-top:10px}
 .bottom button{background:transparent;border:0;color:#8d8b82;padding:8px 2px;font-size:10px;letter-spacing:.04em}
-.note{font-size:9px;line-height:1.55;color:#66665f;text-align:center;margin-top:9px;max-width:510px;margin-left:auto;margin-right:auto}
+.requirements{margin:0 0 14px;padding:0 0 8px;border-top:1px solid #242521;color:#8d8b82}
+.requirements summary{list-style:none;cursor:pointer;text-align:center;padding:13px 8px 8px;font-size:10px;letter-spacing:.16em;color:#a99a78;user-select:none}
+.requirements summary::-webkit-details-marker{display:none}
+.requirements summary:after{content:'＋';margin-left:8px;color:var(--gold)}
+.requirements[open] summary:after{content:'−'}
+.requirements p{max-width:510px;margin:5px auto 8px;padding:0 12px;text-align:center;font-size:10px;line-height:1.7;color:#77766f}
 button{cursor:pointer;touch-action:manipulation}
 button:disabled{opacity:.4;cursor:not-allowed}
 @media(max-width:380px){.app{padding-left:15px;padding-right:15px}header{padding-top:27px}.mode button{font-size:10px;letter-spacing:.05em}.mic{width:76px;height:76px}}
@@ -55,7 +60,7 @@ button:disabled{opacity:.4;cursor:not-allowed}
 <section class="controls"><div class="microw"><div><button class="mic" id="mic" aria-label="Press to speak"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="2.5" width="6" height="12" rx="3"></rect><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3.5M9 21.5h6"></path></svg></button><div class="miclabel" id="miclabel">Press to speak</div></div></div>
 <form class="compose" id="form"><input id="typed" autocomplete="off" placeholder="Or type a sentence…" aria-label="Type a sentence"><button class="send" type="submit">Send</button></form>
 <div class="bottom"><button id="clear" type="button">Clear conversation</button><span id="voicehelp" aria-live="polite">One turn at a time</span></div>
-<div class="note">Internet is required for translation. Press the microphone for each turn. After you finish speaking, the app translates and reads the result aloud. Keep the phone between both speakers. Voice input depends on browser support and microphone permission. For important conversations, use a qualified interpreter.</div></section></div>
+</section><details class="requirements"><summary>REQUIREMENTS</summary><p>Internet is required for translation. Press the microphone for each turn. After you finish speaking, the app translates and reads the result aloud. Keep the phone between both speakers. Voice input depends on browser support and microphone permission. For important conversations, use a qualified interpreter.</p></details></div>
 <script>
 (()=>{
 'use strict';
