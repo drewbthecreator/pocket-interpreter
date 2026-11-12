@@ -12,23 +12,24 @@ header{padding:22px 2px 16px;display:flex;align-items:center;justify-content:spa
 .mode{display:grid;grid-template-columns:1fr 1fr;background:#101421;border:1px solid var(--line);padding:4px;border-radius:14px;gap:4px}.mode button{border:0;background:transparent;color:#aeb5c5;border-radius:10px;padding:12px 8px;font-size:14px;font-weight:700}.mode button.active[data-mode="th-en"]{background:linear-gradient(135deg,#2454a7,#397eea);color:white}.mode button.active[data-mode="en-th"]{background:linear-gradient(135deg,#9b3c79,#df69ad);color:white}
 .hint{text-align:center;color:var(--muted);font-size:12px;padding:12px 4px}#chat{flex:1;min-height:220px;max-height:54vh;overflow:auto;padding:8px 0 18px;display:flex;flex-direction:column;gap:13px}.empty{margin:auto;text-align:center;color:var(--muted);line-height:1.6;padding:28px 20px}.empty strong{display:block;color:#e4e8f2;font-size:16px;margin-bottom:7px}
 .message{max-width:88%;padding:13px 14px;border-radius:17px;line-height:1.45;box-shadow:0 8px 24px #0003;overflow-wrap:anywhere}.message.left{align-self:flex-start;background:#171d2b;border:1px solid #2a3245;border-bottom-left-radius:5px}.message.right{align-self:flex-end;background:#172746;border:1px solid #2d4b78;border-bottom-right-radius:5px}.message.right.pink{background:#2a1b2c;border-color:#58334f}.tag{font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:#9ba7bd;margin-bottom:7px;font-weight:800}.original{font-size:16px;white-space:pre-wrap}.translated{font-size:14px;color:#b8c4d8;margin-top:9px;padding-top:9px;border-top:1px solid #ffffff20;white-space:pre-wrap}.bubble-actions{display:flex;justify-content:flex-end;margin-top:8px}.bubble-actions button{background:#ffffff10;border:1px solid #ffffff18;color:#dce5f6;border-radius:9px;padding:6px 10px;font-size:12px}
-.controls{position:sticky;bottom:0;background:linear-gradient(180deg,transparent,var(--bg) 12%);padding:18px 0 calc(14px + env(safe-area-inset-bottom))}.compose{display:flex;gap:8px}.compose input{flex:1;min-width:0;background:#131927;border:1px solid var(--line);border-radius:13px;padding:14px;color:white;font-size:16px;outline:none}.compose input:focus{border-color:#5689e6}.send{border:0;border-radius:13px;background:#e6eaf3;color:#111827;padding:0 17px;font-weight:800}.bottom{display:flex;justify-content:space-between;align-items:center;margin-top:12px}.bottom button{background:transparent;border:0;color:#9ca6b9;padding:8px 2px;font-size:12px}.note{font-size:10px;line-height:1.45;color:#737d91;text-align:center;margin-top:10px}button{cursor:pointer;touch-action:manipulation}button:disabled{opacity:.45;cursor:not-allowed}
+.controls{position:sticky;bottom:0;background:linear-gradient(180deg,transparent,var(--bg) 12%);padding:18px 0 calc(14px + env(safe-area-inset-bottom))}.microw{display:flex;justify-content:center;margin:0 0 16px}.mic{border:1px solid #6397f8;border-radius:999px;background:linear-gradient(145deg,#3478ed,#21458e);color:white;padding:15px 25px;font-size:15px;font-weight:750;box-shadow:0 8px 24px #0005}.mic.listening{background:linear-gradient(145deg,#e45a9e,#913a78);border-color:#f39ac8}.miclabel{text-align:center;color:#aeb8ca;font-size:11px;margin-top:8px}.compose{display:flex;gap:8px}.compose input{flex:1;min-width:0;background:#131927;border:1px solid var(--line);border-radius:13px;padding:14px;color:white;font-size:16px;outline:none}.compose input:focus{border-color:#5689e6}.send{border:0;border-radius:13px;background:#e6eaf3;color:#111827;padding:0 17px;font-weight:800}.bottom{display:flex;justify-content:space-between;align-items:center;margin-top:12px}.bottom button{background:transparent;border:0;color:#9ca6b9;padding:8px 2px;font-size:12px}.note{font-size:10px;line-height:1.45;color:#737d91;text-align:center;margin-top:10px}button{cursor:pointer;touch-action:manipulation}button:disabled{opacity:.45;cursor:not-allowed}
 </style></head>
 <body><div class="app">
 <header><div><h1>THAI TRANSLATOR</h1><div class="sub">Thai ↔ English · Conversation mode</div></div><div class="status" id="status">READY</div></header>
 <div class="mode" role="group" aria-label="Translation direction"><button class="active" data-mode="en-th" id="enTh">🇬🇧 English speaks</button><button data-mode="th-en" id="thEn">🇹🇭 Thai speaks</button></div>
-<div class="hint" id="hint">English → Thai · Type a sentence to translate</div>
-<main id="chat" aria-live="polite"><div class="empty" id="empty"><strong>Your conversation will appear here.</strong>Choose who is speaking, type a sentence, and tap Send. The translation will appear here.</div></main>
-<section class="controls">
+<div class="hint" id="hint">English → Thai · Speak or type a sentence</div>
+<main id="chat" aria-live="polite"><div class="empty" id="empty"><strong>Your conversation will appear here.</strong>Choose who is speaking, then tap the microphone and say one sentence. You can also type below.</div></main>
+<section class="controls"><div class="microw"><div><button class="mic" id="mic" type="button">🎙 Tap to speak</button><div class="miclabel" id="miclabel">One sentence at a time · tap again for the next speaker</div></div></div>
 <form class="compose" id="form"><input id="typed" autocomplete="off" placeholder="Or type a sentence…" aria-label="Type a sentence"><button class="send" type="submit">Send</button></form>
 <div class="bottom"><button id="clear">Clear conversation</button></div>
-<div class="note">Internet is required for translation. Type one sentence at a time. For important conversations, use a qualified interpreter.</div></section></div>
+<div class="note">Internet is required for translation. Voice input depends on browser support and microphone permission. For important conversations, use a qualified interpreter.</div></section></div>
 <script>
 (()=>{
 const $=id=>document.getElementById(id);
-let mode='en-th',busy=false;
-const chat=$('chat'),status=$('status');
+let mode='en-th',busy=false,recognition=null,listening=false;
+const chat=$('chat'),status=$('status'),mic=$('mic');
 function setMode(next){
+ if(listening){try{recognition?.stop()}catch(e){}}
  mode=next;
  $('thEn').classList.toggle('active',mode==='th-en');
  $('enTh').classList.toggle('active',mode==='en-th');
@@ -88,12 +89,25 @@ async function handleText(text){
   status.textContent='READY';
  }
 }
+function startMic(){
+ const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+ if(!SR){alert('Voice input is not supported in this browser. You can still type a sentence below.');return;}
+ if(busy)return;
+ recognition=new SR();
+ recognition.lang=langs()[0];recognition.continuous=false;recognition.interimResults=false;recognition.maxAlternatives=1;
+ recognition.onstart=()=>{listening=true;mic.classList.add('listening');mic.textContent='Listening… tap to stop';$('miclabel').textContent='Speak one sentence, then pause';status.textContent='LISTENING';};
+ recognition.onresult=e=>{const spoken=e.results?.[0]?.[0]?.transcript||'';if(spoken.trim())handleText(spoken);};
+ recognition.onerror=e=>{if(e.error!=='aborted'){status.textContent='MIC ERROR';$('miclabel').textContent='Microphone unavailable · check browser permission';}};
+ recognition.onend=()=>{listening=false;mic.classList.remove('listening');mic.textContent='🎙 Tap to speak';if(!busy){status.textContent='READY';$('miclabel').textContent='One sentence at a time · tap again for the next speaker';}};
+ try{recognition.start();}catch(e){listening=false;status.textContent='MIC ERROR';$('miclabel').textContent='Could not start microphone · try again';}
+}
+mic.onclick=()=>{if(listening){try{recognition?.stop()}catch(e){};return;}startMic();};
 $('form').onsubmit=e=>{
  e.preventDefault();const value=$('typed').value;$('typed').value='';
  handleText(value);
 };
 $('clear').onclick=()=>{
- chat.innerHTML='<div class="empty" id="empty"><strong>Your conversation will appear here.</strong>Choose who is speaking, type a sentence, and tap Send. The translation will appear here.</div>';
+ chat.innerHTML='<div class="empty" id="empty"><strong>Your conversation will appear here.</strong>Choose who is speaking, then tap the microphone and say one sentence. You can also type below.</div>';
 };
 if('serviceWorker'in navigator&&location.protocol.startsWith('http'))window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
 })();
