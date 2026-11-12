@@ -32,7 +32,10 @@ h1{font-size:17px;letter-spacing:.22em;margin:0;font-weight:650;color:#eee9dc}
 .original{font-size:15px;line-height:1.5;color:inherit;white-space:pre-wrap}
 .translated{font-size:13px;line-height:1.5;color:inherit;opacity:.78;margin-top:7px;padding-top:7px;border-top:1px solid currentColor;white-space:pre-wrap}
 .bubble-actions{display:flex;justify-content:flex-end;margin-top:7px}
-.bubble-actions button{background:#ffffff20;border:1px solid currentColor;color:inherit;border-radius:99px;padding:5px 10px;font-size:10px;letter-spacing:.02em}
+.audio-player{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:9px;margin-top:12px;padding-top:9px;border-top:1px solid currentColor;color:inherit}
+.audio-player button{background:#ffffff20;border:1px solid currentColor;color:inherit;border-radius:99px;min-width:54px;padding:7px 9px;font-size:9px;font-weight:700;letter-spacing:.04em}
+.audio-player input[type=range]{width:100%;min-width:0;accent-color:currentColor;margin:0;cursor:pointer}
+.audio-player .audio-time{font-size:9px;white-space:nowrap;font-variant-numeric:tabular-nums;opacity:.78}
 .controls{position:sticky;bottom:0;background:linear-gradient(180deg,transparent,var(--bg) 12%);padding:20px 0 calc(16px + env(safe-area-inset-bottom))}
 .microw{width:100%;display:flex;justify-content:center;align-items:center;text-align:center;margin:0 0 20px}
 .microw:not(.has-mic){display:none}.microw>div{width:100%;display:flex;flex-direction:column;align-items:center}.mic{display:grid;margin-inline:auto;touch-action:none;user-select:none;-webkit-user-select:none}
@@ -111,7 +114,7 @@ function idle(message=''){
  listening=false;
  mic.classList.remove('listening');
  mic.disabled=busy;
- document.querySelectorAll('.mode button,.pair').forEach(button=>button.disabled=busy);
+ document.querySelectorAll('.mode button').forEach(button=>button.disabled=busy);
  clearNotice();
  setStatus('TAP TO SPEAK',message);
  if(message==='No speech captured. Tap to try again.'){
@@ -126,22 +129,48 @@ function langs(){
  const target=direction==='forward'?{speech:'th-TH',api:'th',label:'THAI'}:{speech:'en-US',api:'en',label:'ENGLISH'};
  return [source.speech,target.speech,source.api,target.api,source.label,target.label];
 }
-function speak(text,lang){
+let activePlayer=null,speechToken=0,playerProgressTimer=null;
+function playerDuration(text,lang){return Math.max(2,text.length/(lang.startsWith('th')?7.5:13));}
+function playerTime(seconds){const value=Math.max(0,Math.floor(seconds));return Math.floor(value/60)+':'+String(value%60).padStart(2,'0');}
+function updatePlayer(player,charIndex){
+ player.currentChar=Math.max(0,Math.min(player.text.length,charIndex));
+ const ratio=player.text.length?player.currentChar/player.text.length:0;
+ player.seek.value=String(Math.round(ratio*1000));
+ player.clock.textContent=playerTime(player.duration*ratio)+' / '+playerTime(player.duration);
+}
+function playFrom(player,charIndex){
+ if(!('speechSynthesis'in window))return;
+ const token=++speechToken;
+ if(playerProgressTimer){clearInterval(playerProgressTimer);playerProgressTimer=null;}
+ if(activePlayer&&activePlayer!==player&&activePlayer.resolve){activePlayer.resolve();activePlayer.resolve=null;}
+ speechSynthesis.cancel();
+ activePlayer=player;
+ const offset=Math.max(0,Math.min(player.text.length-1,charIndex));
+ player.baseChar=offset;
+ player.startedAt=Date.now();
+ updatePlayer(player,offset);
+ player.toggle.textContent='PAUSE';
+ const utterance=new SpeechSynthesisUtterance(player.text.slice(offset));
+ utterance.lang=player.lang;
+ const prefix=player.lang.split('-')[0],voices=speechSynthesis.getVoices();
+ const voice=voices.find(item=>item.lang.toLowerCase()===player.lang.toLowerCase())||voices.find(item=>item.lang.toLowerCase().startsWith(prefix));
+ if(voice)utterance.voice=voice;
+ utterance.onboundary=event=>{if(token===speechToken)updatePlayer(player,offset+(event.charIndex||0));};
+ const finish=()=>{if(token!==speechToken)return;updatePlayer(player,player.text.length);player.toggle.textContent='PLAY';if(playerProgressTimer){clearInterval(playerProgressTimer);playerProgressTimer=null;}if(activePlayer===player)activePlayer=null;if(player.resolve){const done=player.resolve;player.resolve=null;done();}};
+ utterance.onend=finish;
+ utterance.onerror=finish;
+ playerProgressTimer=setInterval(()=>{
+  if(token!==speechToken||activePlayer!==player||speechSynthesis.paused)return;
+  const elapsed=(Date.now()-player.startedAt)/1000;
+  const estimate=offset+Math.floor(elapsed*(player.lang.startsWith('th')?7.5:13));
+  if(estimate>player.currentChar)updatePlayer(player,estimate);
+ },250);
+ try{speechSynthesis.speak(utterance)}catch(error){finish();}
+}
+function speak(text,lang,player){
  if(!('speechSynthesis'in window))return Promise.resolve();
- return new Promise(resolve=>{
-  speechSynthesis.cancel();
-  const utterance=new SpeechSynthesisUtterance(text);
-  utterance.lang=lang;
-  const prefix=lang.split('-')[0],voices=speechSynthesis.getVoices();
-  const voice=voices.find(item=>item.lang.toLowerCase()===lang.toLowerCase())||voices.find(item=>item.lang.toLowerCase().startsWith(prefix));
-  if(voice)utterance.voice=voice;
-  let finished=false;
-  const finish=()=>{if(finished)return;finished=true;clearTimeout(fallback);resolve()};
-  const fallback=setTimeout(finish,Math.max(8000,text.length*180));
-  utterance.onend=finish;
-  utterance.onerror=finish;
-  try{speechSynthesis.speak(utterance)}catch(error){finish()}
- });
+ player.text=text;player.lang=lang;player.duration=playerDuration(text,lang);
+ return new Promise(resolve=>{player.resolve=resolve;playFrom(player,0);});
 }
 async function translate(text){
  const[, ,sourceCode,targetCode]=langs();
@@ -175,10 +204,22 @@ function addMessage(original,translated,sourceLang,targetLang){
  const tag=document.createElement('div');tag.className='tag';tag.textContent=sourceLang+' · ORIGINAL';
  const orig=document.createElement('div');orig.className='original';orig.textContent=original;
  const trans=document.createElement('div');trans.className='translated';trans.textContent=translated;
- const actions=document.createElement('div');actions.className='bubble-actions';
- const replay=document.createElement('button');replay.type='button';replay.textContent='Replay translation';
- replay.onclick=()=>speak(translated,targetLang);
- actions.append(replay);bubble.append(tag,orig,trans,actions);chat.append(bubble);chat.scrollTop=chat.scrollHeight;
+ const player={text:translated,lang:targetLang,duration:playerDuration(translated,targetLang),currentChar:0,baseChar:0,startedAt:0,resolve:null};
+ const controls=document.createElement('div');controls.className='audio-player';
+ player.toggle=document.createElement('button');player.toggle.type='button';player.toggle.textContent='PLAY';player.toggle.setAttribute('aria-label','Play translation audio');
+ player.seek=document.createElement('input');player.seek.type='range';player.seek.min='0';player.seek.max='1000';player.seek.step='1';player.seek.value='0';player.seek.setAttribute('aria-label','Seek translation audio');
+ player.clock=document.createElement('span');player.clock.className='audio-time';player.clock.textContent='0:00 / '+playerTime(player.duration);
+ player.toggle.addEventListener('click',()=>{
+  if(activePlayer===player&&speechSynthesis.speaking){
+   if(speechSynthesis.paused){player.baseChar=player.currentChar;player.startedAt=Date.now();speechSynthesis.resume();player.toggle.textContent='PAUSE';}
+   else{speechSynthesis.pause();player.toggle.textContent='PLAY';}
+  }else playFrom(player,player.currentChar>=player.text.length?0:player.currentChar);
+ });
+ player.seek.addEventListener('input',()=>{const charIndex=Math.round(Number(player.seek.value)/1000*player.text.length);updatePlayer(player,charIndex);});
+ player.seek.addEventListener('change',()=>playFrom(player,Math.round(Number(player.seek.value)/1000*player.text.length)));
+ controls.append(player.toggle,player.seek,player.clock);
+ bubble.append(tag,orig,trans,controls);chat.append(bubble);chat.scrollTop=chat.scrollHeight;
+ return player;
 }
 async function handleText(value){
  const clean=value.trim();
@@ -188,9 +229,9 @@ async function handleText(value){
  setBusy(true);setStatus('TRANSLATING','Translating…');
  try{
   const translated=await translate(clean);
-  addMessage(clean,translated,sourceLabel,targetLabel);
+  const player=addMessage(clean,translated,sourceLabel,targetLabel);
   setStatus('SPEAKING','Speaking translation…');
-  await speak(translated,target);
+  await speak(translated,target,player);
   idle();
  }catch(error){
   console.error(error);
