@@ -33,8 +33,8 @@ h1{font-size:17px;letter-spacing:.22em;margin:0;font-weight:650;color:#eee9dc}
 .microw{width:100%;display:flex;justify-content:center;align-items:center;text-align:center;margin:0 0 20px}.microw>div{width:100%;display:flex;flex-direction:column;align-items:center}.mic{display:grid;margin-inline:auto;touch-action:none;user-select:none;-webkit-user-select:none}
 .mic{width:82px;height:82px;display:grid;place-items:center;border-radius:50%;border:1px solid var(--gold-soft);background:radial-gradient(circle at 35% 25%,#39301f,#171612 70%);color:#e3cf9f;font-size:0;box-shadow:0 0 0 7px #c6a96b0d,0 12px 32px #0008}
 .mic svg{width:26px;height:26px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
-.mic.listening{background:radial-gradient(circle at 35% 25%,#59452a,#211b12 70%);border-color:#e0c17e;box-shadow:0 0 0 9px #c6a96b18,0 12px 32px #0008;animation:pulse 1.6s infinite}
-@keyframes pulse{50%{box-shadow:0 0 0 14px #c6a96b0c,0 12px 32px #0008}}
+.mic.listening,.mic.held{background:radial-gradient(circle at 35% 25%,#8f2424,#3b1010 72%);border-color:#ff5a52;color:#fff0ed;box-shadow:0 0 0 9px #e33b351c,0 12px 32px #0008;animation:holdPulse 1s infinite}
+@keyframes holdPulse{50%{box-shadow:0 0 0 16px #e33b3510,0 12px 32px #0008;border-color:#ff8982}}
 .miclabel{text-align:center;color:#b7ad96;font-size:11px;letter-spacing:.04em;margin-top:11px}
 .compose{display:flex;gap:8px}
 .compose input{flex:1;min-width:0;background:#111315;border:1px solid var(--line);border-radius:9px;padding:14px;color:var(--text);font-size:15px;outline:none}
@@ -53,7 +53,7 @@ button:disabled{opacity:.4;cursor:not-allowed}
 @media(max-width:380px){.app{padding-left:15px;padding-right:15px}header{padding-top:27px}.mode button{font-size:10px;letter-spacing:.05em}.mic{width:76px;height:76px}}
 </style></head>
 <body><div class="app">
-<header><div><h1>THAI TRANSLATOR</h1><div class="sub">Thai ↔ English · Conversation mode</div></div><div class="status" id="status">TAP TO SPEAK</div></header>
+<header><div><h1>THAI TRANSLATOR</h1><div class="sub">Thai ↔ English · Conversation mode</div></div><div class="status" id="status">HOLD TO SPEAK</div></header>
 <div class="mode" role="group" aria-label="Translation direction"><button class="active" data-mode="en-th" id="enTh">ENGLISH SPEAKS</button><button data-mode="th-en" id="thEn">THAI SPEAKS</button></div>
 <div class="hint" id="hint">English → Thai · Hold the microphone while you speak</div>
 <main id="chat" aria-live="polite"><div class="empty" id="empty"><strong>Your conversation will appear here.</strong>Choose who is speaking, hold the microphone while you talk, then release it to translate.</div></main>
@@ -65,7 +65,7 @@ button:disabled{opacity:.4;cursor:not-allowed}
 (()=>{
 'use strict';
 const $=id=>document.getElementById(id);
-let mode='en-th',recognition=null,listening=false,starting=false,busy=false,gotResult=false,stopRequested=false,recognitionError='',capturedText='',recognitionEnded=false,pressActive=false,keyboardPress=false;
+let mode='en-th',recognition=null,listening=false,starting=false,busy=false,gotResult=false,stopRequested=false,recognitionError='',capturedText='',interimText='',recognitionEnded=false,pressActive=false,keyboardPress=false;
 const chat=$('chat'),mic=$('mic'),status=$('status');
 const SpeechRecognition=window.SpeechRecognition||window.webkitSpeechRecognition;
 const supported=!!SpeechRecognition;
@@ -80,12 +80,12 @@ function setBusy(value){
  document.querySelectorAll('.mode button').forEach(button=>button.disabled=value||listening);
  $('form').querySelector('button').disabled=value;
 }
-function idle(message='Tap to speak'){
+function idle(message='Hold to speak'){
  listening=false;
  mic.classList.remove('listening');
  mic.disabled=busy;
  document.querySelectorAll('.mode button').forEach(button=>button.disabled=busy);
- setStatus('TAP TO SPEAK',message);
+ setStatus('HOLD TO SPEAK',message);
 }
 function setMode(next){
  if(busy||listening)return;
@@ -174,9 +174,10 @@ function unlockMic(){
  document.querySelectorAll('.mode button').forEach(button=>button.disabled=busy);
 }
 function processCapturedSpeech(){
- const transcript=capturedText.trim();
+ const transcript=(capturedText+' '+interimText).trim();
  if(!transcript||busy)return;
  capturedText='';
+ interimText='';
  gotResult=false;
  handleText(transcript);
 }
@@ -202,6 +203,7 @@ function startListening(){
  if(busy||listening||starting)return;
  gotResult=false;
  capturedText='';
+ interimText='';
  recognitionEnded=false;
  stopRequested=false;
  recognitionError='';
@@ -209,7 +211,7 @@ function startListening(){
  recognition=instance;
  instance.lang=langs()[0];
  instance.continuous=true;
- instance.interimResults=false;
+ instance.interimResults=true;
  instance.maxAlternatives=1;
  starting=true;
  mic.disabled=true;
@@ -230,13 +232,15 @@ function startListening(){
   setStatus('LISTENING','Release when you’re done');
  };
  instance.onresult=event=>{
+  interimText='';
   for(let i=event.resultIndex;i<event.results.length;i++){
    const result=event.results[i];
-   if(result.isFinal&&result[0]&&result[0].transcript){
-    const part=result[0].transcript.trim();
-    if(part){capturedText+=(capturedText?' ':'')+part;gotResult=true;}
-   }
+   const part=result[0]&&result[0].transcript?result[0].transcript.trim():'';
+   if(!part)continue;
+   if(result.isFinal){capturedText+=(capturedText?' ':'')+part;gotResult=true;}
+   else interimText+=(interimText?' ':'')+part;
   }
+  if(capturedText||interimText)gotResult=true;
  };
  instance.onerror=event=>{
   const code=event.error||'unknown';
@@ -275,6 +279,7 @@ function startListening(){
 function releaseHold(){
  if(!pressActive)return;
  pressActive=false;
+ mic.classList.remove('held');
  stopListening();
 }
 mic.addEventListener('pointerdown',event=>{
@@ -282,6 +287,7 @@ mic.addEventListener('pointerdown',event=>{
  if(busy||pressActive)return;
  event.preventDefault();
  pressActive=true;
+ mic.classList.add('held');
  try{mic.setPointerCapture(event.pointerId)}catch(error){}
  startListening();
 });
@@ -290,12 +296,12 @@ mic.addEventListener('pointercancel',releaseHold);
 mic.addEventListener('lostpointercapture',releaseHold);
 mic.addEventListener('keydown',event=>{
  if((event.key===' '||event.key==='Enter')&&!event.repeat&&!keyboardPress){
-  event.preventDefault();keyboardPress=true;startListening();
+  event.preventDefault();keyboardPress=true;mic.classList.add('held');startListening();
  }
 });
 mic.addEventListener('keyup',event=>{
  if((event.key===' '||event.key==='Enter')&&keyboardPress){
-  event.preventDefault();keyboardPress=false;stopListening();
+  event.preventDefault();keyboardPress=false;mic.classList.remove('held');stopListening();
  }
 });
 $('form').onsubmit=event=>{
@@ -307,7 +313,7 @@ $('form').onsubmit=event=>{
  handleText(value);
 };
 $('clear').onclick=()=>{
- chat.innerHTML='<div class="empty" id="empty"><strong>Your conversation will appear here.</strong>Choose who is speaking, tap the microphone to start, then tap again to stop. The translation will appear and be spoken aloud.</div>';
+ chat.innerHTML='<div class="empty" id="empty"><strong>Your conversation will appear here.</strong>Choose who is speaking, hold the microphone while you talk, then release it to translate.</div>';
 };
 if(!supported){
  mic.disabled=true;
