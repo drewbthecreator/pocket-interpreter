@@ -17,22 +17,131 @@ header{padding:22px 2px 16px;display:flex;align-items:center;justify-content:spa
 </style></head>
 <body><div class="app">
 <header><div><h1>POCKET INTERPRETER</h1><div class="sub">Thai ↔ English · Conversation mode</div></div><div class="status" id="status">READY</div></header>
-<div class="mode" role="group" aria-label="Translation direction"><button data-mode="th-en" id="thEn">🇹🇭 Thai speaks</button><button class="active" data-mode="en-th" id="enTh">🇬🇧 English speaks</button></div>
+<div class="mode" role="group" aria-label="Translation direction"><button class="active" data-mode="en-th" id="enTh">🇬🇧 English speaks</button><button data-mode="th-en" id="thEn">🇹🇭 Thai speaks</button></div>
 <div class="hint" id="hint">English → Thai · Tap the microphone and speak</div>
-<main id="chat" aria-live="polite"><div class="empty" id="empty"><strong>Your conversation will appear here.</strong>Choose who is speaking, then tap the microphone. The original and translation will stay together.</div></main>
-<section class="controls"><div class="microw"><div><button class="mic" id="mic" aria-label="Start listening">🎙</button><div class="miclabel" id="miclabel">Tap to speak</div></div></div>
+<main id="chat" aria-live="polite"><div class="empty" id="empty"><strong>Your conversation will appear here.</strong>Choose who is speaking, then tap the microphone once. It will listen, translate, speak, and listen again automatically.</div></main>
+<section class="controls"><div class="microw"><div><button class="mic" id="mic" aria-label="Start hands-free listening">🎙</button><div class="miclabel" id="miclabel">Tap once to start hands-free</div></div></div>
 <form class="compose" id="form"><input id="typed" autocomplete="off" placeholder="Or type a sentence…" aria-label="Type a sentence"><button class="send" type="submit">Send</button></form>
 <div class="bottom"><button id="clear">Clear conversation</button><button id="stop" disabled>Stop listening</button></div>
-<div class="note">Internet is required for translation. Voice input depends on your browser and microphone permissions. For medical, legal, or other important conversations, use a qualified interpreter.</div></section></div>
+<div class="note">Internet is required for translation. Speak one turn at a time. The browser detects the pause at the end, plays the translation, then listens again. Keep the phone between both speakers. Voice input depends on browser support and microphone permission. For important conversations, use a qualified interpreter.</div></section></div>
 <script>
-(()=>{const $=id=>document.getElementById(id);let mode='en-th',recognition=null,listening=false,busy=false;const chat=$('chat'),mic=$('mic'),status=$('status');const supported=('SpeechRecognition'in window)||('webkitSpeechRecognition'in window);
-function setMode(next){if(listening)stopListening();mode=next;$('thEn').classList.toggle('active',mode==='th-en');$('enTh').classList.toggle('active',mode==='en-th');$('hint').textContent=mode==='th-en'?'Thai → English · Tap the microphone and speak':'English → Thai · Tap the microphone and speak'}
-$('thEn').onclick=()=>setMode('th-en');$('enTh').onclick=()=>setMode('en-th');function langs(){return mode==='th-en'?['th-TH','en']:['en-US','th']}
-function speak(text,lang){if(!('speechSynthesis'in window))return;speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);u.lang=lang;const voices=speechSynthesis.getVoices(),prefix=lang.split('-')[0],voice=voices.find(v=>v.lang.toLowerCase()===lang.toLowerCase())||voices.find(v=>v.lang.toLowerCase().startsWith(prefix));if(voice)u.voice=voice;speechSynthesis.speak(u)}
-async function translate(text){const[source,target]=langs(),url='https://translate.googleapis.com/translate_a/single?client=gtx&sl='+source+'&tl='+target+'&dt=t&q='+encodeURIComponent(text),response=await fetch(url);if(!response.ok)throw new Error('Translation service unavailable');const data=await response.json();return(data[0]||[]).map(part=>part[0]||'').join('').trim()}
-function addMessage(original,translated,sourceLang,targetLang){$('empty')?.remove();const side=mode==='th-en'?'left':'right',bubble=document.createElement('article');bubble.className='message '+side+(mode==='en-th'?' pink':'');const tag=document.createElement('div');tag.className='tag';tag.textContent=sourceLang==='th-TH'?'THAI · ORIGINAL':'ENGLISH · ORIGINAL';const orig=document.createElement('div');orig.className='original';orig.textContent=original;const trans=document.createElement('div');trans.className='translated';trans.textContent=translated;const actions=document.createElement('div');actions.className='bubble-actions';const replay=document.createElement('button');replay.textContent='▶ Replay translation';replay.onclick=()=>speak(translated,targetLang);actions.append(replay);bubble.append(tag,orig,trans,actions);chat.append(bubble);chat.scrollTop=chat.scrollHeight}
-async function handleText(text){const clean=text.trim();if(!clean||busy)return;busy=true;status.textContent='TRANSLATING';const[source,target]=langs();try{const translated=await translate(clean);addMessage(clean,translated,source,target);speak(translated,target);status.textContent='READY'}catch(e){status.textContent='ERROR';alert('Could not translate right now. Check your internet connection and try again.')}finally{busy=false}}
-function startListening(){if(!supported){alert('Voice input is not supported in this browser. Try opening this app in Safari or use the text box.');return}const SR=window.SpeechRecognition||window.webkitSpeechRecognition;recognition=new SR();recognition.lang=langs()[0];recognition.continuous=false;recognition.interimResults=false;recognition.maxAlternatives=1;recognition.onstart=()=>{listening=true;mic.classList.add('listening');$('miclabel').textContent='Listening… tap to stop';status.textContent='LISTENING';$('stop').disabled=false};recognition.onresult=e=>{const text=e.results?.[0]?.[0]?.transcript;if(text)handleText(text)};recognition.onerror=e=>{status.textContent='READY';if(e.error!=='no-speech'&&e.error!=='aborted')alert('Microphone issue: '+e.error+'. Check browser microphone permission.')};recognition.onend=()=>{listening=false;mic.classList.remove('listening');$('miclabel').textContent='Tap to speak';$('stop').disabled=true;if(status.textContent==='LISTENING')status.textContent='READY'};try{recognition.start()}catch(e){alert('Could not start microphone. Please try again.')}}
-function stopListening(){try{recognition?.stop()}catch(e){}listening=false;mic.classList.remove('listening');$('miclabel').textContent='Tap to speak';$('stop').disabled=true}
-mic.onclick=()=>listening?stopListening():startListening();$('stop').onclick=stopListening;$('form').onsubmit=e=>{e.preventDefault();const value=$('typed').value;$('typed').value='';handleText(value)};$('clear').onclick=()=>{if(listening)stopListening();chat.innerHTML='<div class="empty" id="empty"><strong>Your conversation will appear here.</strong>Choose who is speaking, then tap the microphone. The original and translation will stay together.</div>'};if(!supported)$('miclabel').textContent='Voice input not supported here';if('serviceWorker'in navigator&&location.protocol.startsWith('http'))window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}))})();
+(()=>{
+const $=id=>document.getElementById(id);
+let mode='en-th',recognition=null,listening=false,handsFree=false,busy=false;
+const chat=$('chat'),mic=$('mic'),status=$('status');
+const supported=('SpeechRecognition'in window)||('webkitSpeechRecognition'in window);
+function setMode(next){
+ if(listening)stopListening();
+ mode=next;
+ $('thEn').classList.toggle('active',mode==='th-en');
+ $('enTh').classList.toggle('active',mode==='en-th');
+ $('hint').textContent=mode==='th-en'?'Thai → English · Thai speaker':'English → Thai · English speaker';
+}
+$('thEn').onclick=()=>setMode('th-en');
+$('enTh').onclick=()=>setMode('en-th');
+function langs(){return mode==='th-en'?['th-TH','en']:['en-US','th']}
+function speak(text,lang){
+ if(!('speechSynthesis'in window))return Promise.resolve();
+ return new Promise(resolve=>{
+  speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance(text);
+  u.lang=lang;
+  const voices=speechSynthesis.getVoices(),prefix=lang.split('-')[0];
+  const voice=voices.find(v=>v.lang.toLowerCase()===lang.toLowerCase())||voices.find(v=>v.lang.toLowerCase().startsWith(prefix));
+  if(voice)u.voice=voice;
+  u.onend=resolve;u.onerror=resolve;
+  speechSynthesis.speak(u);
+ });
+}
+async function translate(text){
+ const[source,target]=langs();
+ const url='https://translate.googleapis.com/translate_a/single?client=gtx&sl='+source+'&tl='+target+'&dt=t&q='+encodeURIComponent(text);
+ const response=await fetch(url);
+ if(!response.ok)throw new Error('Translation service unavailable');
+ const data=await response.json();
+ return(data[0]||[]).map(part=>part[0]||'').join('').trim();
+}
+function addMessage(original,translated,sourceLang,targetLang){
+ $('empty')?.remove();
+ const side=mode==='th-en'?'left':'right',bubble=document.createElement('article');
+ bubble.className='message '+side+(mode==='en-th'?' pink':'');
+ const tag=document.createElement('div');tag.className='tag';
+ tag.textContent=sourceLang==='th-TH'?'THAI · ORIGINAL':'ENGLISH · ORIGINAL';
+ const orig=document.createElement('div');orig.className='original';orig.textContent=original;
+ const trans=document.createElement('div');trans.className='translated';trans.textContent=translated;
+ const actions=document.createElement('div');actions.className='bubble-actions';
+ const replay=document.createElement('button');replay.textContent='▶ Replay translation';
+ replay.onclick=()=>speak(translated,targetLang);
+ actions.append(replay);bubble.append(tag,orig,trans,actions);chat.append(bubble);chat.scrollTop=chat.scrollHeight;
+}
+function beginRecognition(){
+ if(!handsFree||busy||!supported)return;
+ const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+ recognition=new SR();
+ recognition.lang=langs()[0];recognition.continuous=false;recognition.interimResults=false;recognition.maxAlternatives=1;
+ recognition.onstart=()=>{
+  listening=true;mic.classList.add('listening');
+  $('miclabel').textContent='Listening · tap to pause';
+  status.textContent='LISTENING';$('stop').disabled=false;
+ };
+ recognition.onresult=e=>{
+  const text=e.results?.[0]?.[0]?.transcript;
+  if(text)handleText(text);
+ };
+ recognition.onerror=e=>{
+  if(e.error!=='no-speech'&&e.error!=='aborted'){
+   status.textContent='MIC ERROR';
+   $('miclabel').textContent='Check microphone permission';
+  }
+ };
+ recognition.onend=()=>{
+  listening=false;
+  if(!handsFree){mic.classList.remove('listening');$('miclabel').textContent='Tap once to start hands-free';$('stop').disabled=true;if(status.textContent==='LISTENING')status.textContent='READY';return;}
+  if(!busy)setTimeout(beginRecognition,350);
+ };
+ try{recognition.start()}catch(e){listening=false;if(handsFree)setTimeout(beginRecognition,700);}
+}
+async function handleText(text){
+ const clean=text.trim();if(!clean||busy)return;
+ busy=true;status.textContent='TRANSLATING';$('miclabel').textContent='Translating…';
+ const[source,target]=langs();
+ try{
+  const translated=await translate(clean);
+  addMessage(clean,translated,source,target);
+  status.textContent='SPEAKING';$('miclabel').textContent='Playing translation…';
+  await speak(translated,target);
+ }catch(e){
+  status.textContent='ERROR';
+  $('miclabel').textContent='Translation failed · still listening';
+  alert('Could not translate right now. Check your internet connection and try again.');
+ }finally{
+  busy=false;
+  if(handsFree){status.textContent='LISTENING';$('miclabel').textContent='Listening for next speaker…';beginRecognition();}
+  else{status.textContent='READY';$('miclabel').textContent='Tap once to start hands-free';}
+ }
+}
+function startListening(){
+ if(!supported){alert('Voice input is not supported in this browser. Try Chrome on Android or a supported browser, or use the text box.');return;}
+ handsFree=true;status.textContent='STARTING';beginRecognition();
+}
+function stopListening(){
+ handsFree=false;
+ try{recognition?.stop()}catch(e){}
+ listening=false;mic.classList.remove('listening');
+ $('miclabel').textContent='Tap once to start hands-free';$('stop').disabled=true;
+ if(!busy)status.textContent='READY';
+}
+mic.onclick=()=>handsFree?stopListening():startListening();
+$('stop').onclick=stopListening;
+$('form').onsubmit=e=>{
+ e.preventDefault();const value=$('typed').value;$('typed').value='';
+ handleText(value);
+};
+$('clear').onclick=()=>{
+ if(listening||handsFree)stopListening();
+ chat.innerHTML='<div class="empty" id="empty"><strong>Your conversation will appear here.</strong>Choose who is speaking, then tap the microphone once. It will listen, translate, speak, and listen again automatically.</div>';
+};
+if(!supported)$('miclabel').textContent='Voice input unavailable · use text';
+if('serviceWorker'in navigator&&location.protocol.startsWith('http'))window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+})();
 </script></body></html>
