@@ -87,6 +87,7 @@ function dockMic(){
  const dock=$('micDock');
  if(mic.parentElement!==dock){
   dock.append(mic);
+  dock.classList.add('has-mic');
   mic.classList.add('docked');
   $('micStage').hidden=true;
  }
