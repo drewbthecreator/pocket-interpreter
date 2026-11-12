@@ -50,20 +50,40 @@ button:disabled{opacity:.4;cursor:not-allowed}
 <body><div class="app">
 <header><div><h1>THAI TRANSLATOR</h1><div class="sub">Thai ↔ English · Conversation mode</div></div><div class="status" id="status">PRESS TO SPEAK</div></header>
 <div class="mode" role="group" aria-label="Translation direction"><button class="active" data-mode="en-th" id="enTh">ENGLISH SPEAKS</button><button data-mode="th-en" id="thEn">THAI SPEAKS</button></div>
-<div class="hint" id="hint">English → Thai · Tap the microphone and speak</div>
-<main id="chat" aria-live="polite"><div class="empty" id="empty"><strong>Your conversation will appear here.</strong>Choose who is speaking, then tap the microphone once. It will listen, translate, speak, and listen again automatically.</div></main>
-<section class="controls"><div class="microw"><div><button class="mic" id="mic" aria-label="Start hands-free listening"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="2.5" width="6" height="12" rx="3"></rect><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3.5M9 21.5h6"></path></svg></button><div class="miclabel" id="miclabel">Press to speak</div></div></div>
+<div class="hint" id="hint">English → Thai · Press the microphone and speak</div>
+<main id="chat" aria-live="polite"><div class="empty" id="empty"><strong>Your conversation will appear here.</strong>Choose who is speaking, press the microphone, and say a sentence. The translation will appear and be spoken aloud.</div></main>
+<section class="controls"><div class="microw"><div><button class="mic" id="mic" aria-label="Press to speak"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="2.5" width="6" height="12" rx="3"></rect><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3.5M9 21.5h6"></path></svg></button><div class="miclabel" id="miclabel">Press to speak</div></div></div>
 <form class="compose" id="form"><input id="typed" autocomplete="off" placeholder="Or type a sentence…" aria-label="Type a sentence"><button class="send" type="submit">Send</button></form>
-<div class="bottom"><button id="clear">Clear conversation</button><button id="stop" disabled>Stop listening</button></div>
-<div class="note">Internet is required for translation. Speak one turn at a time. The browser detects the pause at the end, plays the translation, then listens again. Keep the phone between both speakers. Voice input depends on browser support and microphone permission. For important conversations, use a qualified interpreter.</div></section></div>
+<div class="bottom"><button id="clear" type="button">Clear conversation</button><span id="voicehelp" aria-live="polite">One turn at a time</span></div>
+<div class="note">Internet is required for translation. Press the microphone for each turn. After you finish speaking, the app translates and reads the result aloud. Keep the phone between both speakers. Voice input depends on browser support and microphone permission. For important conversations, use a qualified interpreter.</div></section></div>
 <script>
 (()=>{
+'use strict';
 const $=id=>document.getElementById(id);
-let mode='en-th',recognition=null,listening=false,handsFree=false,busy=false;
+let mode='en-th',recognition=null,listening=false,busy=false,gotResult=false;
 const chat=$('chat'),mic=$('mic'),status=$('status');
-const supported=('SpeechRecognition'in window)||('webkitSpeechRecognition'in window);
+const SpeechRecognition=window.SpeechRecognition||window.webkitSpeechRecognition;
+const supported=!!SpeechRecognition;
+function setStatus(value,label){
+ status.textContent=value;
+ if(label)$('miclabel').textContent=label;
+}
+function setBusy(value){
+ busy=value;
+ mic.disabled=value||listening;
+ $('typed').disabled=value;
+ document.querySelectorAll('.mode button').forEach(button=>button.disabled=value||listening);
+ $('form').querySelector('button').disabled=value;
+}
+function idle(message='Press to speak'){
+ listening=false;
+ mic.classList.remove('listening');
+ mic.disabled=busy;
+ document.querySelectorAll('.mode button').forEach(button=>button.disabled=busy);
+ setStatus('PRESS TO SPEAK',message);
+}
 function setMode(next){
- if(listening)stopListening();
+ if(busy||listening)return;
  mode=next;
  $('thEn').classList.toggle('active',mode==='th-en');
  $('enTh').classList.toggle('active',mode==='en-th');
@@ -76,104 +96,138 @@ function speak(text,lang){
  if(!('speechSynthesis'in window))return Promise.resolve();
  return new Promise(resolve=>{
   speechSynthesis.cancel();
-  const u=new SpeechSynthesisUtterance(text);
-  u.lang=lang;
-  const voices=speechSynthesis.getVoices(),prefix=lang.split('-')[0];
-  const voice=voices.find(v=>v.lang.toLowerCase()===lang.toLowerCase())||voices.find(v=>v.lang.toLowerCase().startsWith(prefix));
-  if(voice)u.voice=voice;
-  u.onend=resolve;u.onerror=resolve;
-  speechSynthesis.speak(u);
+  const utterance=new SpeechSynthesisUtterance(text);
+  utterance.lang=lang;
+  const prefix=lang.split('-')[0],voices=speechSynthesis.getVoices();
+  const voice=voices.find(item=>item.lang.toLowerCase()===lang.toLowerCase())||voices.find(item=>item.lang.toLowerCase().startsWith(prefix));
+  if(voice)utterance.voice=voice;
+  let finished=false;
+  const finish=()=>{if(finished)return;finished=true;clearTimeout(fallback);resolve()};
+  const fallback=setTimeout(finish,Math.max(8000,text.length*180));
+  utterance.onend=finish;
+  utterance.onerror=finish;
+  try{speechSynthesis.speak(utterance)}catch(error){finish()}
  });
 }
 async function translate(text){
  const[source,target]=langs();
  const url='https://translate.googleapis.com/translate_a/single?client=gtx&sl='+source+'&tl='+target+'&dt=t&q='+encodeURIComponent(text);
- const response=await fetch(url);
- if(!response.ok)throw new Error('Translation service unavailable');
- const data=await response.json();
- return(data[0]||[]).map(part=>part[0]||'').join('').trim();
+ const controller=new AbortController();
+ const timeout=setTimeout(()=>controller.abort(),15000);
+ try{
+  const response=await fetch(url,{signal:controller.signal});
+  if(!response.ok)throw new Error('Translation service returned '+response.status);
+  const data=await response.json();
+  const result=(data[0]||[]).map(part=>part[0]||'').join('').trim();
+  if(!result)throw new Error('No translation returned');
+  return result;
+ }finally{clearTimeout(timeout)}
 }
 function addMessage(original,translated,sourceLang,targetLang){
  $('empty')?.remove();
- const side=mode==='th-en'?'left':'right',bubble=document.createElement('article');
- bubble.className='message '+side+(mode==='en-th'?' pink':'');
- const tag=document.createElement('div');tag.className='tag';
- tag.textContent=sourceLang==='th-TH'?'THAI · ORIGINAL':'ENGLISH · ORIGINAL';
+ const side=mode==='th-en'?'left':'right';
+ const bubble=document.createElement('article');bubble.className='message '+side;
+ const tag=document.createElement('div');tag.className='tag';tag.textContent=sourceLang==='th-TH'?'THAI · ORIGINAL':'ENGLISH · ORIGINAL';
  const orig=document.createElement('div');orig.className='original';orig.textContent=original;
  const trans=document.createElement('div');trans.className='translated';trans.textContent=translated;
  const actions=document.createElement('div');actions.className='bubble-actions';
- const replay=document.createElement('button');replay.textContent='▶ Replay translation';
+ const replay=document.createElement('button');replay.type='button';replay.textContent='Replay translation';
  replay.onclick=()=>speak(translated,targetLang);
  actions.append(replay);bubble.append(tag,orig,trans,actions);chat.append(bubble);chat.scrollTop=chat.scrollHeight;
 }
-function beginRecognition(){
- if(!handsFree||busy||!supported)return;
- const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
- recognition=new SR();
- recognition.lang=langs()[0];recognition.continuous=false;recognition.interimResults=false;recognition.maxAlternatives=1;
- recognition.onstart=()=>{
-  listening=true;mic.classList.add('listening');
-  $('miclabel').textContent='Listening · tap to pause';
-  status.textContent='LISTENING';$('miclabel').textContent='Listening…';$('stop').disabled=false;
- };
- recognition.onresult=e=>{
-  const text=e.results?.[0]?.[0]?.transcript;
-  if(text)handleText(text);
- };
- recognition.onerror=e=>{
-  if(e.error!=='no-speech'&&e.error!=='aborted'){
-   status.textContent='MIC ERROR';
-   $('miclabel').textContent='Check microphone permission';
-  }
- };
- recognition.onend=()=>{
-  listening=false;
-  if(!handsFree){mic.classList.remove('listening');$('miclabel').textContent='Press to speak';$('stop').disabled=true;if(status.textContent==='LISTENING')status.textContent='PRESS TO SPEAK';return;}
-  if(!busy)setTimeout(beginRecognition,350);
- };
- try{recognition.start()}catch(e){listening=false;if(handsFree)setTimeout(beginRecognition,700);}
-}
-async function handleText(text){
- const clean=text.trim();if(!clean||busy)return;
- busy=true;status.textContent='TRANSLATING';$('miclabel').textContent='Translating…';
+async function handleText(value){
+ const clean=value.trim();
+ if(!clean||busy)return;
  const[source,target]=langs();
+ setBusy(true);setStatus('TRANSLATING','Translating…');
  try{
   const translated=await translate(clean);
   addMessage(clean,translated,source,target);
-  status.textContent='SPEAKING';$('miclabel').textContent='Playing translation…';
+  setStatus('SPEAKING','Speaking translation…');
   await speak(translated,target);
- }catch(e){
-  status.textContent='ERROR';
-  $('miclabel').textContent='Translation failed · still listening';
-  alert('Could not translate right now. Check your internet connection and try again.');
+  idle();
+ }catch(error){
+  console.error(error);
+  setStatus('TRANSLATION ERROR','Could not translate. Check your connection and try again.');
+  mic.disabled=false;
+  $('typed').disabled=false;
+  $('form').querySelector('button').disabled=false;
+  document.querySelectorAll('.mode button').forEach(button=>button.disabled=false);
  }finally{
-  busy=false;
-  if(handsFree){status.textContent='LISTENING';$('miclabel').textContent='Listening for next speaker…';beginRecognition();}
-  else{status.textContent='READY';$('miclabel').textContent='Tap once to start hands-free';}
+  setBusy(false);
+  if(!listening&&status.textContent==='TRANSLATING')idle();
+  else if(!listening&&status.textContent==='SPEAKING')idle();
  }
 }
 function startListening(){
- if(!supported){alert('Voice input is not supported in this browser. Try Chrome on Android or a supported browser, or use the text box.');return;}
- handsFree=true;status.textContent='STARTING';beginRecognition();
+ if(!supported){setStatus('VOICE UNAVAILABLE','Use the text box in this browser.');return}
+ if(busy||listening)return;
+ gotResult=false;
+ const instance=new SpeechRecognition();
+ recognition=instance;
+ instance.lang=langs()[0];
+ instance.continuous=false;
+ instance.interimResults=false;
+ instance.maxAlternatives=1;
+ mic.disabled=true;
+ document.querySelectorAll('.mode button').forEach(button=>button.disabled=true);
+ setStatus('STARTING','Starting microphone…');
+ instance.onstart=()=>{
+  listening=true;mic.classList.add('listening');
+  setStatus('LISTENING','Listening…');
+ };
+ instance.onresult=event=>{
+  const transcript=event.results&&event.results[0]&&event.results[0][0]&&event.results[0][0].transcript;
+  if(transcript&&transcript.trim()){
+   gotResult=true;
+   listening=false;
+   mic.classList.remove('listening');
+   handleText(transcript);
+  }
+ };
+ instance.onerror=event=>{
+  const messages={
+   'not-allowed':'Allow microphone access in your browser settings.',
+   'service-not-allowed':'Voice input is blocked by this browser.',
+   'audio-capture':'No microphone was found.',
+   'network':'Voice recognition needs an internet connection.',
+   'no-speech':'No speech detected. Press to try again.'
+  };
+  setStatus('PRESS TO SPEAK',messages[event.error]||'Voice input stopped. Press to try again.');
+ };
+ instance.onend=()=>{
+  listening=false;
+  mic.classList.remove('listening');
+  if(!gotResult&&!busy){
+   mic.disabled=false;
+   document.querySelectorAll('.mode button').forEach(button=>button.disabled=false);
+   if(status.textContent==='STARTING'||status.textContent==='LISTENING')idle('No speech detected. Press to try again.');
+  }
+ };
+ try{instance.start()}catch(error){
+  listening=false;mic.classList.remove('listening');mic.disabled=false;
+  document.querySelectorAll('.mode button').forEach(button=>button.disabled=false);
+  setStatus('PRESS TO SPEAK','Could not start microphone. Check permissions and try again.');
+ }
 }
-function stopListening(){
- handsFree=false;
- try{recognition?.stop()}catch(e){}
- listening=false;mic.classList.remove('listening');
- $('miclabel').textContent='Tap once to start hands-free';$('stop').disabled=true;
- if(!busy)status.textContent='READY';
-}
-mic.onclick=()=>handsFree?stopListening():startListening();
-$('stop').onclick=stopListening;
-$('form').onsubmit=e=>{
- e.preventDefault();const value=$('typed').value;$('typed').value='';
+mic.onclick=startListening;
+$('form').onsubmit=event=>{
+ event.preventDefault();
+ if(busy||listening)return;
+ const input=$('typed'),value=input.value.trim();
+ if(!value)return;
+ input.value='';
  handleText(value);
 };
 $('clear').onclick=()=>{
- if(listening||handsFree)stopListening();
- chat.innerHTML='<div class="empty" id="empty"><strong>Your conversation will appear here.</strong>Choose who is speaking, then tap the microphone once. It will listen, translate, speak, and listen again automatically.</div>';
+ chat.innerHTML='<div class="empty" id="empty"><strong>Your conversation will appear here.</strong>Choose who is speaking, press the microphone, and say a sentence. The translation will appear and be spoken aloud.</div>';
 };
-if(!supported){$('miclabel').textContent='Voice input unavailable · use text';status.textContent='VOICE UNAVAILABLE';}
-if('serviceWorker'in navigator&&location.protocol.startsWith('http'))window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+if(!supported){
+ mic.disabled=true;
+ setStatus('VOICE UNAVAILABLE','Use the text box in this browser.');
+}
+if('serviceWorker'in navigator&&location.protocol.startsWith('http')){
+ window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(error=>console.warn('Service worker registration failed',error)));
+}
 })();
 </script></body></html>
