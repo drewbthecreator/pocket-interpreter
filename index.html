@@ -17,15 +17,15 @@ header{padding:22px 2px 16px;display:flex;align-items:center;justify-content:spa
 </style></head>
 <body><div class="app">
 <header><div><h1>POCKET INTERPRETER</h1><div class="sub">Thai ↔ English · Conversation mode</div></div><div class="status" id="status">READY</div></header>
-<div class="mode" role="group" aria-label="Translation direction"><button class="active" data-mode="th-en" id="thEn">🇹🇭 Thai speaks</button><button data-mode="en-th" id="enTh">🇬🇧 English speaks</button></div>
-<div class="hint" id="hint">Thai → English · Tap the microphone and speak</div>
+<div class="mode" role="group" aria-label="Translation direction"><button data-mode="th-en" id="thEn">🇹🇭 Thai speaks</button><button class="active" data-mode="en-th" id="enTh">🇬🇧 English speaks</button></div>
+<div class="hint" id="hint">English → Thai · Tap the microphone and speak</div>
 <main id="chat" aria-live="polite"><div class="empty" id="empty"><strong>Your conversation will appear here.</strong>Choose who is speaking, then tap the microphone. The original and translation will stay together.</div></main>
 <section class="controls"><div class="microw"><div><button class="mic" id="mic" aria-label="Start listening">🎙</button><div class="miclabel" id="miclabel">Tap to speak</div></div></div>
 <form class="compose" id="form"><input id="typed" autocomplete="off" placeholder="Or type a sentence…" aria-label="Type a sentence"><button class="send" type="submit">Send</button></form>
 <div class="bottom"><button id="clear">Clear conversation</button><button id="stop" disabled>Stop listening</button></div>
 <div class="note">Internet is required for translation. Voice input depends on your browser and microphone permissions. For medical, legal, or other important conversations, use a qualified interpreter.</div></section></div>
 <script>
-(()=>{const $=id=>document.getElementById(id);let mode='th-en',recognition=null,listening=false,busy=false;const chat=$('chat'),mic=$('mic'),status=$('status');const supported=('SpeechRecognition'in window)||('webkitSpeechRecognition'in window);
+(()=>{const $=id=>document.getElementById(id);let mode='en-th',recognition=null,listening=false,busy=false;const chat=$('chat'),mic=$('mic'),status=$('status');const supported=('SpeechRecognition'in window)||('webkitSpeechRecognition'in window);
 function setMode(next){if(listening)stopListening();mode=next;$('thEn').classList.toggle('active',mode==='th-en');$('enTh').classList.toggle('active',mode==='en-th');$('hint').textContent=mode==='th-en'?'Thai → English · Tap the microphone and speak':'English → Thai · Tap the microphone and speak'}
 $('thEn').onclick=()=>setMode('th-en');$('enTh').onclick=()=>setMode('en-th');function langs(){return mode==='th-en'?['th-TH','en']:['en-US','th']}
 function speak(text,lang){if(!('speechSynthesis'in window))return;speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);u.lang=lang;const voices=speechSynthesis.getVoices(),prefix=lang.split('-')[0],voice=voices.find(v=>v.lang.toLowerCase()===lang.toLowerCase())||voices.find(v=>v.lang.toLowerCase().startsWith(prefix));if(voice)u.voice=voice;speechSynthesis.speak(u)}
