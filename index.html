@@ -30,7 +30,7 @@ h1{font-size:17px;letter-spacing:.22em;margin:0;font-weight:650;color:#eee9dc}
 .bubble-actions{display:flex;justify-content:flex-end;margin-top:9px}
 .bubble-actions button{background:transparent;border:1px solid #49402e;color:#cdb783;border-radius:7px;padding:6px 10px;font-size:10px;letter-spacing:.03em}
 .controls{position:sticky;bottom:0;background:linear-gradient(180deg,transparent,var(--bg) 12%);padding:20px 0 calc(16px + env(safe-area-inset-bottom))}
-.microw{width:100%;display:flex;justify-content:center;text-align:center;margin:0 0 20px}
+.microw{width:100%;display:flex;justify-content:center;align-items:center;text-align:center;margin:0 0 20px}.microw>div{width:100%;display:flex;flex-direction:column;align-items:center}.mic{display:grid;margin-inline:auto}
 .mic{width:82px;height:82px;display:grid;place-items:center;border-radius:50%;border:1px solid var(--gold-soft);background:radial-gradient(circle at 35% 25%,#39301f,#171612 70%);color:#e3cf9f;font-size:0;box-shadow:0 0 0 7px #c6a96b0d,0 12px 32px #0008}
 .mic svg{width:26px;height:26px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
 .mic.listening{background:radial-gradient(circle at 35% 25%,#59452a,#211b12 70%);border-color:#e0c17e;box-shadow:0 0 0 9px #c6a96b18,0 12px 32px #0008;animation:pulse 1.6s infinite}
@@ -65,7 +65,7 @@ button:disabled{opacity:.4;cursor:not-allowed}
 (()=>{
 'use strict';
 const $=id=>document.getElementById(id);
-let mode='en-th',recognition=null,listening=false,busy=false,gotResult=false;
+let mode='en-th',recognition=null,listening=false,busy=false,gotResult=false,stopRequested=false,recognitionError='';
 const chat=$('chat'),mic=$('mic'),status=$('status');
 const SpeechRecognition=window.SpeechRecognition||window.webkitSpeechRecognition;
 const supported=!!SpeechRecognition;
@@ -164,14 +164,21 @@ async function handleText(value){
   else if(!listening&&status.textContent==='SPEAKING')idle();
  }
 }
+function unlockMic(){
+ listening=false;
+ mic.classList.remove('listening');
+ mic.disabled=busy;
+ mic.setAttribute('aria-label','Tap to speak');
+ document.querySelectorAll('.mode button').forEach(button=>button.disabled=busy);
+}
 function stopListening(){
  if(!listening||!recognition)return;
+ stopRequested=true;
  mic.disabled=true;
  setStatus('STOPPING','Finishing…');
  try{recognition.stop()}catch(error){
   console.warn('Could not stop speech recognition cleanly',error);
-  listening=false;mic.classList.remove('listening');mic.disabled=false;
-  document.querySelectorAll('.mode button').forEach(button=>button.disabled=false);
+  unlockMic();
   idle('Tap to try again.');
  }
 }
@@ -179,6 +186,8 @@ function startListening(){
  if(!supported){setStatus('VOICE UNAVAILABLE','Use the text box in this browser.');return}
  if(busy||listening)return;
  gotResult=false;
+ stopRequested=false;
+ recognitionError='';
  const instance=new SpeechRecognition();
  recognition=instance;
  instance.lang=langs()[0];
@@ -190,12 +199,16 @@ function startListening(){
  document.querySelectorAll('.mode button').forEach(button=>button.disabled=true);
  setStatus('STARTING','Starting microphone…');
  instance.onstart=()=>{
-  listening=true;mic.disabled=false;mic.setAttribute('aria-label','Tap to stop listening');mic.classList.add('listening');
+  listening=true;
+  mic.disabled=false;
+  mic.setAttribute('aria-label','Tap to stop listening');
+  mic.classList.add('listening');
   setStatus('LISTENING','Tap to stop');
  };
  instance.onresult=event=>{
-  const transcript=event.results&&event.results[0]&&event.results[0][0]&&event.results[0][0].transcript;
-  if(transcript&&transcript.trim()){
+  const last=event.results&&event.results[event.results.length-1];
+  const transcript=last&&last[0]&&last[0].transcript;
+  if(transcript&&transcript.trim()&&!gotResult){
    gotResult=true;
    listening=false;
    mic.classList.remove('listening');
@@ -203,28 +216,32 @@ function startListening(){
   }
  };
  instance.onerror=event=>{
+  const code=event.error||'unknown';
+  if(code==='aborted'&&stopRequested)return;
+  recognitionError=code;
   const messages={
    'not-allowed':'Allow microphone access in your browser settings.',
    'service-not-allowed':'Voice input is blocked by this browser.',
    'audio-capture':'No microphone was found.',
-   'network':'Voice recognition needs an internet connection.',
-   'no-speech':'No speech detected. Tap to try again.'
+   'network':'Voice recognition needs internet access. Check your connection.',
+   'no-speech':'No speech detected. Tap to try again.',
+   'language-not-supported':'This browser does not support the selected speech language.',
+   'bad-grammar':'Speech recognition could not process that request.'
   };
-  setStatus('TAP TO SPEAK',messages[event.error]||'Voice input stopped. Tap to try again.');
+  unlockMic();
+  setStatus('VOICE INPUT ERROR',messages[code]||('Voice input error: '+code+'. Check microphone permission and try again.'));
  };
  instance.onend=()=>{
-  listening=false;
-  mic.classList.remove('listening');
-  if(!gotResult&&!busy){
-   mic.disabled=false;mic.setAttribute('aria-label','Tap to speak');
-   document.querySelectorAll('.mode button').forEach(button=>button.disabled=false);
-   if(status.textContent==='STARTING'||status.textContent==='LISTENING'||status.textContent==='STOPPING')idle('No speech detected. Tap to try again.');
+  unlockMic();
+  if(!gotResult&&!busy&&!recognitionError){
+   if(stopRequested)idle('No speech captured. Tap to try again.');
+   else idle('Voice input ended. Tap to try again.');
   }
+  stopRequested=false;
  };
  try{instance.start()}catch(error){
-  listening=false;mic.classList.remove('listening');mic.disabled=false;
-  document.querySelectorAll('.mode button').forEach(button=>button.disabled=false);
-  setStatus('TAP TO SPEAK','Could not start microphone. Check permissions and try again.');
+  unlockMic();
+  setStatus('VOICE INPUT ERROR','Could not start microphone. Check permissions and try again.');
  }
 }
 mic.onclick=()=>{if(listening){stopListening();return;}startListening()};
