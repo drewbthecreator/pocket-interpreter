@@ -1,4 +1,4 @@
-# Pocket Interpreter
+# Thai Translator
 
 A lightweight, mobile-friendly Thai ↔ English conversation interpreter.
 
