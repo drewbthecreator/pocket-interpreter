@@ -208,9 +208,9 @@ function startListening(){
    'service-not-allowed':'Voice input is blocked by this browser.',
    'audio-capture':'No microphone was found.',
    'network':'Voice recognition needs an internet connection.',
-   'no-speech':'No speech detected. Press to try again.'
+   'no-speech':'No speech detected. Tap to try again.'
   };
-  setStatus('TAP TO SPEAK',messages[event.error]||'Voice input stopped. Press to try again.');
+  setStatus('TAP TO SPEAK',messages[event.error]||'Voice input stopped. Tap to try again.');
  };
  instance.onend=()=>{
   listening=false;
