@@ -1,12 +1,12 @@
 {
-  "name": "Pocket Interpreter",
-  "short_name": "Pocket T",
+  "name": "Thai Translator",
+  "short_name": "Thai Translator",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "background_color": "#090b12",
   "theme_color": "#090b12",
-  "description": "A simple Thai and English conversation interpreter.",
+  "description": "A simple English and Thai conversation translator.",
   "icons": [
     {
       "src": "./icon.svg",
