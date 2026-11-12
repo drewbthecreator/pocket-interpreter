@@ -162,7 +162,7 @@ function playFrom(player,charIndex){
  playerProgressTimer=setInterval(()=>{
   if(token!==speechToken||activePlayer!==player||speechSynthesis.paused)return;
   const elapsed=(Date.now()-player.startedAt)/1000;
-  const estimate=offset+Math.floor(elapsed*(player.lang.startsWith('th')?7.5:13));
+  const estimate=player.baseChar+Math.floor(elapsed*(player.lang.startsWith('th')?7.5:13));
   if(estimate>player.currentChar)updatePlayer(player,estimate);
  },250);
  try{speechSynthesis.speak(utterance)}catch(error){finish();}
