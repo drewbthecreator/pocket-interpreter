@@ -5,22 +5,54 @@
 <meta name="theme-color" content="#090b12"><meta name="description" content="A simple English and Thai conversation translator.">
 <link rel="manifest" href="./manifest.json"><link rel="icon" href="./icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="./icon.svg"><meta name="apple-mobile-web-app-capable" content="yes"><title>Thai Translator</title>
 <style>
-:root{color-scheme:dark;--bg:#090b12;--line:#252b3b;--muted:#9299aa;--text:#f4f6fb}
-*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 15% 0%,#18233c 0,transparent 42%),radial-gradient(ellipse at 100% 15%,#2a172b 0,transparent 36%),var(--bg);color:var(--text);font:16px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;min-height:100vh}
-.app{max-width:680px;margin:auto;min-height:100vh;display:flex;flex-direction:column;padding:env(safe-area-inset-top) 16px env(safe-area-inset-bottom)}
-header{padding:22px 2px 16px;display:flex;align-items:center;justify-content:space-between}h1{font-size:20px;letter-spacing:.02em;margin:0;font-weight:750}.sub{color:var(--muted);font-size:12px;margin-top:5px}.status{font-size:11px;color:#aab3c6;border:1px solid var(--line);padding:7px 10px;border-radius:99px}
-.mode{display:grid;grid-template-columns:1fr 1fr;background:#101421;border:1px solid var(--line);padding:4px;border-radius:14px;gap:4px}.mode button{border:0;background:transparent;color:#aeb5c5;border-radius:10px;padding:12px 8px;font-size:14px;font-weight:700}.mode button.active[data-mode="th-en"]{background:linear-gradient(135deg,#2454a7,#397eea);color:white}.mode button.active[data-mode="en-th"]{background:linear-gradient(135deg,#9b3c79,#df69ad);color:white}
-.hint{text-align:center;color:var(--muted);font-size:12px;padding:12px 4px}#chat{flex:1;min-height:220px;max-height:54vh;overflow:auto;padding:8px 0 18px;display:flex;flex-direction:column;gap:13px}.empty{margin:auto;text-align:center;color:var(--muted);line-height:1.6;padding:28px 20px}.empty strong{display:block;color:#e4e8f2;font-size:16px;margin-bottom:7px}
-.message{max-width:88%;padding:13px 14px;border-radius:17px;line-height:1.45;box-shadow:0 8px 24px #0003;overflow-wrap:anywhere}.message.left{align-self:flex-start;background:#171d2b;border:1px solid #2a3245;border-bottom-left-radius:5px}.message.right{align-self:flex-end;background:#172746;border:1px solid #2d4b78;border-bottom-right-radius:5px}.message.right.pink{background:#2a1b2c;border-color:#58334f}.tag{font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:#9ba7bd;margin-bottom:7px;font-weight:800}.original{font-size:16px;white-space:pre-wrap}.translated{font-size:14px;color:#b8c4d8;margin-top:9px;padding-top:9px;border-top:1px solid #ffffff20;white-space:pre-wrap}.bubble-actions{display:flex;justify-content:flex-end;margin-top:8px}.bubble-actions button{background:#ffffff10;border:1px solid #ffffff18;color:#dce5f6;border-radius:9px;padding:6px 10px;font-size:12px}
-.controls{position:sticky;bottom:0;background:linear-gradient(180deg,transparent,var(--bg) 12%);padding:18px 0 calc(14px + env(safe-area-inset-bottom))}.microw{display:flex;justify-content:center;margin:3px 0 15px}.mic{width:76px;height:76px;border-radius:50%;border:1px solid #6397f8;background:linear-gradient(145deg,#3478ed,#21458e);color:white;font-size:27px;box-shadow:0 0 0 8px #3979e51c,0 12px 35px #0008}.mic.listening{background:linear-gradient(145deg,#e45a9e,#913a78);border-color:#f39ac8;animation:pulse 1.5s infinite}@keyframes pulse{50%{box-shadow:0 0 0 15px #e45a9e18,0 12px 35px #0008}}.miclabel{text-align:center;color:#c0c8d8;font-size:12px;margin-top:8px}
-.compose{display:flex;gap:8px}.compose input{flex:1;min-width:0;background:#131927;border:1px solid var(--line);border-radius:13px;padding:14px;color:white;font-size:16px;outline:none}.compose input:focus{border-color:#5689e6}.send{border:0;border-radius:13px;background:#e6eaf3;color:#111827;padding:0 17px;font-weight:800}.bottom{display:flex;justify-content:space-between;align-items:center;margin-top:12px}.bottom button{background:transparent;border:0;color:#9ca6b9;padding:8px 2px;font-size:12px}.note{font-size:10px;line-height:1.45;color:#737d91;text-align:center;margin-top:10px}button{cursor:pointer;touch-action:manipulation}button:disabled{opacity:.45;cursor:not-allowed}
+:root{color-scheme:dark;--bg:#090a0c;--panel:#111315;--line:#292a27;--muted:#85857e;--text:#f3f0e8;--gold:#c6a96b;--gold-soft:#8e784d}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(ellipse at 50% -18%,#29251b 0,transparent 42%),var(--bg);color:var(--text);font:15px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;min-height:100vh}
+.app{max-width:660px;margin:auto;min-height:100vh;display:flex;flex-direction:column;padding:env(safe-area-inset-top) 20px env(safe-area-inset-bottom)}
+header{padding:34px 0 25px;display:flex;flex-direction:column;align-items:center;gap:9px;text-align:center}
+h1{font-size:17px;letter-spacing:.22em;margin:0;font-weight:650;color:#eee9dc}
+.sub{color:var(--muted);font-size:11px;letter-spacing:.08em;margin-top:0}
+.status{font-size:9px;letter-spacing:.16em;color:var(--gold);border:1px solid #514630;padding:6px 10px;border-radius:99px;margin-top:3px}
+.mode{width:min(100%,430px);margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:8px;background:transparent;border:0;padding:0}
+.mode button{min-height:49px;border:1px solid var(--line);background:#101213;color:#a4a197;border-radius:9px;padding:11px 8px;font-size:11px;letter-spacing:.09em;font-weight:650;transition:background .2s,border-color .2s,color .2s}
+.mode button.active[data-mode="en-th"],.mode button.active[data-mode="th-en"]{background:#292419;border-color:var(--gold-soft);color:#e8d4a6;box-shadow:inset 0 0 0 1px #8e784d30}
+.hint{text-align:center;color:#9d988b;font-size:11px;letter-spacing:.04em;padding:13px 4px 6px}
+#chat{flex:1;min-height:220px;max-height:54vh;overflow:auto;padding:18px 0 22px;display:flex;flex-direction:column;gap:12px}
+.empty{margin:auto;text-align:center;color:#85857e;line-height:1.7;padding:28px 20px;font-size:13px}
+.empty strong{display:block;color:#e5dfd1;font-size:15px;font-weight:550;margin-bottom:7px}
+.message{max-width:88%;padding:13px 15px;border-radius:13px;line-height:1.5;overflow-wrap:anywhere;background:#141615;border:1px solid #292b27}
+.message.left{align-self:flex-start;border-bottom-left-radius:3px}
+.message.right{align-self:flex-end;border-bottom-right-radius:3px;background:#211f19;border-color:#49402e}
+.message.right.pink{background:#211f19;border-color:#49402e}
+.tag{font-size:9px;text-transform:uppercase;letter-spacing:.15em;color:var(--gold);margin-bottom:7px;font-weight:650}
+.original{font-size:15px;white-space:pre-wrap}
+.translated{font-size:13px;color:#c2bfb5;margin-top:9px;padding-top:9px;border-top:1px solid #ffffff18;white-space:pre-wrap}
+.bubble-actions{display:flex;justify-content:flex-end;margin-top:9px}
+.bubble-actions button{background:transparent;border:1px solid #49402e;color:#cdb783;border-radius:7px;padding:6px 10px;font-size:10px;letter-spacing:.03em}
+.controls{position:sticky;bottom:0;background:linear-gradient(180deg,transparent,var(--bg) 12%);padding:20px 0 calc(16px + env(safe-area-inset-bottom))}
+.microw{width:100%;display:flex;justify-content:center;text-align:center;margin:0 0 20px}
+.mic{width:82px;height:82px;display:grid;place-items:center;border-radius:50%;border:1px solid var(--gold-soft);background:radial-gradient(circle at 35% 25%,#39301f,#171612 70%);color:#e3cf9f;font-size:0;box-shadow:0 0 0 7px #c6a96b0d,0 12px 32px #0008}
+.mic svg{width:26px;height:26px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.mic.listening{background:radial-gradient(circle at 35% 25%,#59452a,#211b12 70%);border-color:#e0c17e;box-shadow:0 0 0 9px #c6a96b18,0 12px 32px #0008;animation:pulse 1.6s infinite}
+@keyframes pulse{50%{box-shadow:0 0 0 14px #c6a96b0c,0 12px 32px #0008}}
+.miclabel{text-align:center;color:#b7ad96;font-size:11px;letter-spacing:.04em;margin-top:11px}
+.compose{display:flex;gap:8px}
+.compose input{flex:1;min-width:0;background:#111315;border:1px solid var(--line);border-radius:9px;padding:14px;color:var(--text);font-size:15px;outline:none}
+.compose input:focus{border-color:var(--gold-soft)}
+.send{border:1px solid var(--gold-soft);border-radius:9px;background:#292419;color:#e8d4a6;padding:0 17px;font-size:11px;letter-spacing:.08em;font-weight:700}
+.bottom{display:flex;justify-content:space-between;align-items:center;margin-top:10px}
+.bottom button{background:transparent;border:0;color:#8d8b82;padding:8px 2px;font-size:10px;letter-spacing:.04em}
+.note{font-size:9px;line-height:1.55;color:#66665f;text-align:center;margin-top:9px;max-width:510px;margin-left:auto;margin-right:auto}
+button{cursor:pointer;touch-action:manipulation}
+button:disabled{opacity:.4;cursor:not-allowed}
+@media(max-width:380px){.app{padding-left:15px;padding-right:15px}header{padding-top:27px}.mode button{font-size:10px;letter-spacing:.05em}.mic{width:76px;height:76px}}
 </style></head>
 <body><div class="app">
 <header><div><h1>THAI TRANSLATOR</h1><div class="sub">Thai ↔ English · Conversation mode</div></div><div class="status" id="status">READY</div></header>
-<div class="mode" role="group" aria-label="Translation direction"><button class="active" data-mode="en-th" id="enTh">🇬🇧 English speaks</button><button data-mode="th-en" id="thEn">🇹🇭 Thai speaks</button></div>
+<div class="mode" role="group" aria-label="Translation direction"><button class="active" data-mode="en-th" id="enTh">ENGLISH SPEAKS</button><button data-mode="th-en" id="thEn">THAI SPEAKS</button></div>
 <div class="hint" id="hint">English → Thai · Tap the microphone and speak</div>
 <main id="chat" aria-live="polite"><div class="empty" id="empty"><strong>Your conversation will appear here.</strong>Choose who is speaking, then tap the microphone once. It will listen, translate, speak, and listen again automatically.</div></main>
-<section class="controls"><div class="microw"><div><button class="mic" id="mic" aria-label="Start hands-free listening">🎙</button><div class="miclabel" id="miclabel">Tap once to start hands-free</div></div></div>
+<section class="controls"><div class="microw"><div><button class="mic" id="mic" aria-label="Start hands-free listening"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="2.5" width="6" height="12" rx="3"></rect><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3.5M9 21.5h6"></path></svg></button><div class="miclabel" id="miclabel">Tap once to start hands-free</div></div></div>
 <form class="compose" id="form"><input id="typed" autocomplete="off" placeholder="Or type a sentence…" aria-label="Type a sentence"><button class="send" type="submit">Send</button></form>
 <div class="bottom"><button id="clear">Clear conversation</button><button id="stop" disabled>Stop listening</button></div>
 <div class="note">Internet is required for translation. Speak one turn at a time. The browser detects the pause at the end, plays the translation, then listens again. Keep the phone between both speakers. Voice input depends on browser support and microphone permission. For important conversations, use a qualified interpreter.</div></section></div>
