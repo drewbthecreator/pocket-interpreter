@@ -284,12 +284,26 @@ function startListening(){
  }
 }
 let micPermissionGranted=false;
+async function checkMicPermission(){
+ // Reuse a browser-level grant when the Permissions API supports microphone status.
+ try{
+  if(navigator.permissions&&navigator.permissions.query){
+   const permission=await navigator.permissions.query({name:'microphone'});
+   if(permission.state==='granted'){
+    micPermissionGranted=true;
+    setStatus('MIC READY','Tap to speak');
+   }
+  }
+ }catch(error){
+  // Some iPhone browsers do not expose microphone permission status.
+ }
+}
 async function requestMicPermission(){
  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){
   setStatus('MIC PERMISSION UNAVAILABLE','This browser cannot request microphone access here.');
   return false;
  }
- setStatus('MICROPHONE SETUP','Allow microphone access when your browser asks.');
+ setStatus('MICROPHONE SETUP','Allow microphone access if your browser asks.');
  try{
   const stream=await navigator.mediaDevices.getUserMedia({audio:true});
   stream.getTracks().forEach(track=>track.stop());
@@ -299,7 +313,7 @@ async function requestMicPermission(){
   return true;
  }catch(error){
   console.warn('Microphone permission was not granted',error);
-  setStatus('MICROPHONE ACCESS NEEDED','Allow microphone access, then tap to retry.');
+  setStatus('MICROPHONE ACCESS NEEDED','Check this site’s microphone permission in your browser settings.');
   mic.disabled=!supported;
   return false;
  }
@@ -307,11 +321,11 @@ async function requestMicPermission(){
 mic.addEventListener('click',async()=>{
  if(busy)return;
  clearNotice();
- if(!micPermissionGranted){
-  await requestMicPermission();
-  return;
- }
  if(listening||starting){stopListening();return;}
+ if(!micPermissionGranted){
+  const granted=await requestMicPermission();
+  if(!granted)return;
+ }
  $('miclabel').textContent='Listening…';
  startListening();
 });
@@ -330,9 +344,8 @@ if(!supported){
  mic.disabled=true;
  setStatus('VOICE UNAVAILABLE','Use the text box in this browser.');
 }else{
- // Ask the browser for microphone permission as soon as the translator opens.
- // Some iPhone browsers may defer the native prompt until the user taps the mic.
- requestMicPermission();
+ // Check for an existing browser grant without triggering a new permission prompt.
+ checkMicPermission();
 }
 if('serviceWorker'in navigator&&location.protocol.startsWith('http')){
  window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(error=>console.warn('Service worker registration failed',error)));
