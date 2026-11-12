@@ -221,7 +221,7 @@ function startListening(){
  instance.interimResults=true;
  instance.maxAlternatives=1;
  starting=true;
- mic.disabled=true;
+ mic.disabled=busy;
  mic.setAttribute('aria-label','Starting microphone');
  document.querySelectorAll('.mode button').forEach(button=>button.disabled=true);
  setStatus('STARTING','Starting microphone…');
