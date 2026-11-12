@@ -62,7 +62,6 @@ button:disabled{opacity:.4;cursor:not-allowed}
 </style></head>
 <body><div class="app">
 <header><h1>CONVERSATION TRANSLATOR</h1><div class="status" id="status" aria-hidden="true"></div></header>
-<div class="pairs" role="group" aria-label="Choose language pair"><button class="pair active" data-pair="en-th"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="2.5" width="6" height="12" rx="3"></rect><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3.5M9 21.5h6"></path></svg>EN ↔ TH</button></div>
 <div class="mode" role="group" aria-label="Speaking direction"><button class="active" data-direction="forward" id="forwardBtn">ENGLISH → THAI</button><button data-direction="reverse" id="reverseBtn">THAI → ENGLISH</button></div>
 <div class="translation-loader" id="translationLoader" aria-live="polite" aria-hidden="true"><span id="translationText">TRANSLATING</span><div class="loader-track"><div class="loader-progress"></div></div></div>
 <main id="chat" aria-live="polite"><div class="mic-stage" id="micStage"><button class="mic" id="mic" aria-label="Start speaking" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="2.5" width="6" height="12" rx="3"></rect><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3.5M9 21.5h6"></path></svg></button><div class="start-hint" id="startHint">TAP TO START</div></div></main>
@@ -74,7 +73,7 @@ button:disabled{opacity:.4;cursor:not-allowed}
 (()=>{
 'use strict';
 const $=id=>document.getElementById(id);
-let pair='en-th',direction='forward',recognition=null,listening=false,starting=false,busy=false,gotResult=false,stopRequested=false,recognitionError='',capturedText='',interimText='',recognitionEnded=false,noticeTimer=null;
+let direction='forward',recognition=null,listening=false,starting=false,busy=false,gotResult=false,stopRequested=false,recognitionError='',capturedText='',interimText='',recognitionEnded=false,noticeTimer=null;
 const chat=$('chat'),mic=$('mic'),status=$('status');
 const SpeechRecognition=window.SpeechRecognition||window.webkitSpeechRecognition;
 const supported=!!SpeechRecognition;
@@ -100,7 +99,7 @@ function setBusy(value){
  busy=value;
  mic.disabled=value;
  $('typed').disabled=value;
- document.querySelectorAll('.mode button,.pair').forEach(button=>button.disabled=value||listening);
+ document.querySelectorAll('.mode button').forEach(button=>button.disabled=value||listening);
  $('form').querySelector('button').disabled=value;
 }
 function clearNotice(){
@@ -120,16 +119,13 @@ function idle(message=''){
   noticeTimer=setTimeout(()=>{$('miclabel').textContent='Tap to speak';$('miclabel').classList.remove('notice-fade');noticeTimer=null;},6000);
  }
 }
-const pairInfo={
- 'en-th':[{speech:'en-US',api:'en',label:'ENGLISH'},{speech:'th-TH',api:'th',label:'THAI'}]
-};
-function updateDirectionLabels(){const [first,second]=pairInfo[pair];$('forwardBtn').textContent=first.label+' → '+second.label;$('reverseBtn').textContent=second.label+' → '+first.label;}
-function setPair(next){if(busy||listening||starting)return;pair=next;document.querySelectorAll('.pair').forEach(button=>button.classList.toggle('active',button.dataset.pair===pair));updateDirectionLabels();}
 function setDirection(next){if(busy||listening||starting)return;direction=next;$('forwardBtn').classList.toggle('active',direction==='forward');$('reverseBtn').classList.toggle('active',direction==='reverse');}
-document.querySelectorAll('.pair').forEach(button=>button.addEventListener('click',()=>setPair(button.dataset.pair)));
 $('forwardBtn').onclick=()=>setDirection('forward');$('reverseBtn').onclick=()=>setDirection('reverse');
-function langs(){const [first,second]=pairInfo[pair];const source=direction==='forward'?first:second;const target=direction==='forward'?second:first;return [source.speech,target.speech,source.api,target.api,source.label,target.label];}
-updateDirectionLabels();
+function langs(){
+ const source=direction==='forward'?{speech:'en-US',api:'en',label:'ENGLISH'}:{speech:'th-TH',api:'th',label:'THAI'};
+ const target=direction==='forward'?{speech:'th-TH',api:'th',label:'THAI'}:{speech:'en-US',api:'en',label:'ENGLISH'};
+ return [source.speech,target.speech,source.api,target.api,source.label,target.label];
+}
 function speak(text,lang){
  if(!('speechSynthesis'in window))return Promise.resolve();
  return new Promise(resolve=>{
