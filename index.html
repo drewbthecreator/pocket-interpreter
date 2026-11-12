@@ -36,8 +36,10 @@ h1{font-size:17px;letter-spacing:.22em;margin:0;font-weight:650;color:#eee9dc}
 .controls{position:sticky;bottom:0;background:linear-gradient(180deg,transparent,var(--bg) 12%);padding:20px 0 calc(16px + env(safe-area-inset-bottom))}
 .microw{width:100%;display:flex;justify-content:center;align-items:center;text-align:center;margin:0 0 20px}
 .microw:not(.has-mic){display:none}.microw>div{width:100%;display:flex;flex-direction:column;align-items:center}.mic{display:grid;margin-inline:auto;touch-action:none;user-select:none;-webkit-user-select:none}
-.mic{width:108px;height:108px;display:grid;place-items:center;border-radius:50%;border:1px solid var(--gold-soft);background:radial-gradient(circle at 35% 25%,#39301f,#171612 70%);color:#e3cf9f;font-size:0;box-shadow:0 0 0 9px #c6a96b0d,0 14px 36px #0008;transition:width .3s ease,height .3s ease,box-shadow .3s ease}
-.mic.docked{width:94px;height:94px}
+.mic{width:108px;height:108px;min-width:108px;min-height:108px;aspect-ratio:1/1;flex:0 0 108px;padding:0;display:grid;place-items:center;border-radius:50%;border:1px solid var(--gold-soft);background:radial-gradient(circle at 35% 25%,#39301f,#171612 70%);color:#e3cf9f;font-size:0;box-shadow:0 0 0 9px #c6a96b0d,0 14px 36px #0008;transition:width .3s ease,height .3s ease,box-shadow .3s ease}
+.mic.docked{width:94px;height:94px;min-width:94px;min-height:94px;flex-basis:94px}
+.start-hint{margin-top:18px;text-align:center;color:#c9c1af;font-size:13px;letter-spacing:.08em;text-transform:uppercase}
+.mic-stage{flex-direction:column}
 .mic svg{width:38px;height:38px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
 .mic.listening,.mic.held{background:radial-gradient(circle at 35% 25%,#8f2424,#3b1010 72%);border-color:#ff5a52;color:#fff0ed;box-shadow:0 0 0 9px #e33b351c,0 12px 32px #0008;animation:holdPulse 1s infinite}
 @keyframes holdPulse{50%{box-shadow:0 0 0 16px #e33b3510,0 12px 32px #0008;border-color:#ff8982}}
@@ -62,7 +64,7 @@ button:disabled{opacity:.4;cursor:not-allowed}
 <header><h1>THAI TRANSLATOR</h1><div class="status" id="status" aria-hidden="true"></div></header>
 <div class="mode" role="group" aria-label="Translation direction"><button class="active" data-mode="en-th" id="enTh">ENGLISH SPEAKS</button><button data-mode="th-en" id="thEn">THAI SPEAKS</button></div>
 <div class="translation-loader" id="translationLoader" aria-live="polite" aria-hidden="true"><span id="translationText">TRANSLATING</span><div class="loader-track"><div class="loader-progress"></div></div></div>
-<main id="chat" aria-live="polite"><div class="mic-stage" id="micStage"><button class="mic" id="mic" aria-label="Start speaking" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="2.5" width="6" height="12" rx="3"></rect><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3.5M9 21.5h6"></path></svg></button></div></main>
+<main id="chat" aria-live="polite"><div class="mic-stage" id="micStage"><button class="mic" id="mic" aria-label="Start speaking" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="2.5" width="6" height="12" rx="3"></rect><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3.5M9 21.5h6"></path></svg></button><div class="start-hint" id="startHint">Tap to start</div></div></main>
 <section class="controls"><div class="microw" id="micDock"><div class="miclabel" id="miclabel" aria-hidden="true"> </div></div>
 <form class="compose" id="form"><input id="typed" autocomplete="off" placeholder="Or type a sentence…" aria-label="Type a sentence"><button class="send" type="submit">Send</button></form>
 <div class="bottom"><button id="clear" type="button">Clear conversation</button><span id="voicehelp" aria-live="polite">One turn at a time</span></div>
