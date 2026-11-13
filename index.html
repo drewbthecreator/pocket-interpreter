@@ -206,9 +206,41 @@ function playFrom(player,charIndex){
  },250);
  try{speechSynthesis.speak(utterance)}catch(error){finish();}
 }
-function speak(text,lang,player){
- if(!('speechSynthesis'in window))return Promise.resolve();
- player.text=text;player.lang=lang;player.duration=playerDuration(text,lang);
+async function speak(text,lang,player){
+ player.text=text;player.lang=lang;
+ if(lang.toLowerCase().startsWith('lo')){
+  player.duration=0;
+  player.clock.textContent='Loading Lao audio…';
+  const endpoint='https://textreadtts.com/tts/convert?accessKey=FREE&language=lao&speaker=speaker1&text='+encodeURIComponent(text);
+  const response=await fetch(endpoint,{method:'GET',headers:{'Accept':'application/json'}});
+  if(!response.ok)throw new Error('Lao speech service returned '+response.status);
+  const data=await response.json();
+  if(!data||data.code!==0||!data.audio)throw new Error((data&&data.message)||'Lao audio could not be generated.');
+  const audio=new Audio(data.audio);
+  audio.preload='auto';
+  player.audio=audio;
+  audio.addEventListener('loadedmetadata',()=>{
+   player.duration=Number.isFinite(audio.duration)?audio.duration:0;
+   player.clock.textContent='0:00 / '+playerTime(player.duration);
+   player.seek.value='0';
+  });
+  audio.addEventListener('timeupdate',()=>{
+   if(!Number.isFinite(audio.duration)||audio.duration<=0)return;
+   player.seek.value=String(Math.round(audio.currentTime/audio.duration*1000));
+   player.clock.textContent=playerTime(audio.currentTime)+' / '+playerTime(audio.duration);
+  });
+  audio.addEventListener('play',()=>{player.toggle.textContent='PAUSE';});
+  audio.addEventListener('pause',()=>{if(!audio.ended)player.toggle.textContent='PLAY';});
+  audio.addEventListener('ended',()=>{player.toggle.textContent='PLAY';player.seek.value='1000';player.clock.textContent=playerTime(audio.duration)+' / '+playerTime(audio.duration);});
+  audio.addEventListener('error',()=>{player.toggle.textContent='RETRY';player.clock.textContent='Lao audio unavailable';});
+  try{await audio.play();}catch(error){
+   player.toggle.textContent='PLAY';
+   player.clock.textContent='Tap PLAY to hear Lao';
+  }
+  return;
+ }
+ if(!('speechSynthesis'in window))return;
+ player.duration=playerDuration(text,lang);
  return new Promise(resolve=>{player.resolve=resolve;playFrom(player,0);});
 }
 async function translate(text){
@@ -249,13 +281,31 @@ function addMessage(original,translated,sourceLang,targetLang){
  player.seek=document.createElement('input');player.seek.type='range';player.seek.min='0';player.seek.max='1000';player.seek.step='1';player.seek.value='0';player.seek.setAttribute('aria-label','Seek translation audio');
  player.clock=document.createElement('span');player.clock.className='audio-time';player.clock.textContent='0:00 / '+playerTime(player.duration);
  player.toggle.addEventListener('click',()=>{
+  if(player.audio){
+   if(player.audio.paused){player.audio.play().catch(()=>{player.toggle.textContent='RETRY';player.clock.textContent='Tap PLAY to retry';});}
+   else player.audio.pause();
+   return;
+  }
   if(activePlayer===player&&speechSynthesis.speaking){
    if(speechSynthesis.paused){player.baseChar=player.currentChar;player.startedAt=Date.now();speechSynthesis.resume();player.toggle.textContent='PAUSE';}
    else{speechSynthesis.pause();player.toggle.textContent='PLAY';}
   }else playFrom(player,player.toggle.textContent==='RETRY'||player.currentChar>=player.text.length?0:player.currentChar);
  });
- player.seek.addEventListener('input',()=>{const charIndex=Math.round(Number(player.seek.value)/1000*player.text.length);updatePlayer(player,charIndex);});
- player.seek.addEventListener('change',()=>playFrom(player,Math.round(Number(player.seek.value)/1000*player.text.length)));
+ player.seek.addEventListener('input',()=>{
+  if(player.audio&&Number.isFinite(player.audio.duration)&&player.audio.duration>0){
+   const seconds=Number(player.seek.value)/1000*player.audio.duration;
+   player.clock.textContent=playerTime(seconds)+' / '+playerTime(player.audio.duration);
+   return;
+  }
+  const charIndex=Math.round(Number(player.seek.value)/1000*player.text.length);updatePlayer(player,charIndex);
+ });
+ player.seek.addEventListener('change',()=>{
+  if(player.audio&&Number.isFinite(player.audio.duration)&&player.audio.duration>0){
+   player.audio.currentTime=Number(player.seek.value)/1000*player.audio.duration;
+   return;
+  }
+  playFrom(player,Math.round(Number(player.seek.value)/1000*player.text.length));
+ });
  controls.append(player.toggle,player.seek,player.clock);
  bubble.append(tag,orig,trans,controls);chat.append(bubble);chat.scrollTop=chat.scrollHeight;
  return player;
