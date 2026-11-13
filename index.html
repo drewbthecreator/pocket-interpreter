@@ -129,7 +129,7 @@ function idle(message=''){
  mic.disabled=busy;
  document.querySelectorAll('.language-picker select,.swap-languages').forEach(control=>control.disabled=busy);
  clearNotice();
- setStatus('READY',message||'Tap to start');
+ setStatus('READY',message||( $('micDock').classList.contains('has-mic')?'Tap to speak':'Tap to start'));
  if(message==='No speech captured. Tap to try again.'){
   noticeTimer=setTimeout(()=>{$('miclabel').classList.add('notice-fade');},5650);
   noticeTimer=setTimeout(()=>{$('miclabel').textContent='Tap to speak';$('miclabel').classList.remove('notice-fade');noticeTimer=null;},6000);
@@ -150,8 +150,14 @@ function updateLanguages(){
  Array.from($('sourceLanguage').options).forEach(option=>option.disabled=option.value===targetLanguage);
  Array.from($('targetLanguage').options).forEach(option=>option.disabled=option.value===sourceLanguage);
 }
-$('sourceLanguage').addEventListener('change',updateLanguages);
-$('targetLanguage').addEventListener('change',updateLanguages);
+$('sourceLanguage').addEventListener('change',()=>{
+ if($('sourceLanguage').value===targetLanguage)$('targetLanguage').value=sourceLanguage;
+ updateLanguages();
+});
+$('targetLanguage').addEventListener('change',()=>{
+ if($('targetLanguage').value===sourceLanguage)$('sourceLanguage').value=targetLanguage;
+ updateLanguages();
+});
 $('swapLanguages').addEventListener('click',()=>{
  if(busy||listening||starting)return;
  const previous=sourceLanguage;
