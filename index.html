@@ -18,9 +18,14 @@ h1{font-size:17px;letter-spacing:.22em;margin:0;font-weight:650;color:#eee9dc}
 .loader-track{height:5px;border-radius:99px;background:#303946;overflow:hidden}
 .loader-progress{height:100%;width:38%;border-radius:99px;background:linear-gradient(90deg,#2878e5,#8bbcff);animation:translateLoad 1.15s ease-in-out infinite}
 @keyframes translateLoad{0%{transform:translateX(-110%)}100%{transform:translateX(280%)}}
-.pairs{width:min(100%,430px);margin:0 auto 9px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.pair{min-height:48px;display:flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--line);border-radius:9px;background:#101213;color:#a4a197;padding:8px 5px;font-size:10px;font-weight:650;letter-spacing:.035em;white-space:nowrap}.pair svg{width:14px;height:14px;flex:0 0 14px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}.pair.active{background:#292419;border-color:var(--gold-soft);color:#e8d4a6;box-shadow:inset 0 0 0 1px #8e784d30}.mode{width:min(100%,430px);margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:8px;background:transparent;border:0;padding:0}
-.mode button{min-height:49px;border:1px solid var(--line);background:#101213;color:#a4a197;border-radius:9px;padding:11px 8px;font-size:11px;letter-spacing:.09em;font-weight:650;transition:background .2s,border-color .2s,color .2s}
-.mode button.active{background:#292419;border-color:var(--gold-soft);color:#e8d4a6;box-shadow:inset 0 0 0 1px #8e784d30}
+.pairs{width:min(100%,430px);margin:0 auto 9px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.pair{min-height:48px;display:flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--line);border-radius:9px;background:#101213;color:#a4a197;padding:8px 5px;font-size:10px;font-weight:650;letter-spacing:.035em;white-space:nowrap}.pair svg{width:14px;height:14px;flex:0 0 14px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}.pair.active{background:#292419;border-color:var(--gold-soft);color:#e8d4a6;box-shadow:inset 0 0 0 1px #8e784d30}.language-picker{width:min(100%,520px);margin:0 auto 9px;display:grid;grid-template-columns:minmax(0,1fr) 42px minmax(0,1fr);align-items:end;gap:9px}
+.language-field{min-width:0;display:flex;flex-direction:column;gap:7px}
+.language-field label{padding-left:3px;color:#a99a78;font-size:9px;font-weight:700;letter-spacing:.15em}
+.language-field select{width:100%;min-width:0;min-height:49px;appearance:none;-webkit-appearance:none;border:1px solid var(--line);border-radius:10px;background:#111315;color:#eee9dc;padding:0 28px 0 12px;font-size:13px;font-weight:650;letter-spacing:.025em;background-image:linear-gradient(45deg,transparent 50%,#c6a96b 50%),linear-gradient(135deg,#c6a96b 50%,transparent 50%);background-position:calc(100% - 15px) 21px,calc(100% - 10px) 21px;background-size:5px 5px;background-repeat:no-repeat}
+.language-field select:focus{outline:none;border-color:var(--gold-soft)}
+.swap-languages{width:42px;height:49px;border:1px solid var(--line);border-radius:10px;background:#292419;color:#e8d4a6;font-size:20px;display:grid;place-items:center}
+.swap-languages:disabled,.language-field select:disabled{opacity:.4}
+@media(max-width:380px){.language-picker{gap:6px;grid-template-columns:minmax(0,1fr) 36px minmax(0,1fr)}.swap-languages{width:36px}.language-field select{font-size:11px;padding-left:8px}}
 #chat{flex:1;min-height:260px;max-height:54vh;overflow:auto;padding:18px 0 22px;display:flex;flex-direction:column;gap:12px}
 .mic-stage{flex:1;min-height:240px;display:flex;align-items:center;justify-content:center}
 .microw:empty{display:none}
@@ -48,7 +53,8 @@ h1{font-size:17px;letter-spacing:.22em;margin:0;font-weight:650;color:#eee9dc}
 .mic svg{width:38px;height:38px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
 .mic.listening,.mic.held{background:radial-gradient(circle at 35% 25%,#8f2424,#3b1010 72%);border-color:#ff5a52;color:#fff0ed;box-shadow:0 0 0 9px #e33b351c,0 12px 32px #0008;animation:holdPulse 1s infinite}
 @keyframes holdPulse{50%{box-shadow:0 0 0 16px #e33b3510,0 12px 32px #0008;border-color:#ff8982}}
-.miclabel{display:none}
+.miclabel{display:block;margin-top:12px;text-align:center;color:#c9c1af;font-size:12px;font-weight:650;letter-spacing:.1em;text-transform:uppercase;min-height:16px}
+.start-hint{min-height:18px}
 .compose{display:flex;gap:8px}
 .compose input{flex:1;min-width:0;background:#111315;border:1px solid var(--line);border-radius:9px;padding:14px;color:var(--text);font-size:15px;outline:none}
 .compose input:focus{border-color:var(--gold-soft)}
@@ -67,7 +73,11 @@ button:disabled{opacity:.4;cursor:not-allowed}
 </style></head>
 <body><div class="app">
 <header><h1>THAILAND INTERPRETER</h1><div class="status" id="status" aria-hidden="true"></div></header>
-<div class="mode" role="group" aria-label="Speaking direction"><button class="active" data-direction="forward" id="forwardBtn">ENGLISH → THAI</button><button data-direction="reverse" id="reverseBtn">THAI → ENGLISH</button></div>
+<div class="language-picker" aria-label="Choose conversation languages">
+ <div class="language-field"><label for="sourceLanguage">YOU SPEAK</label><select id="sourceLanguage"><option value="en">ENGLISH</option><option value="th">THAI</option><option value="lo">LAO</option></select></div>
+ <button class="swap-languages" id="swapLanguages" type="button" aria-label="Swap languages" title="Swap languages">⇄</button>
+ <div class="language-field"><label for="targetLanguage">THEY SPEAK</label><select id="targetLanguage"><option value="th">THAI</option><option value="en">ENGLISH</option><option value="lo">LAO</option></select></div>
+</div>
 <div class="translation-loader" id="translationLoader" aria-live="polite" aria-hidden="true"><span id="translationText">TRANSLATING</span><div class="loader-track"><div class="loader-progress"></div></div></div>
 <main id="chat" aria-live="polite"><div class="mic-stage" id="micStage"><button class="mic" id="mic" aria-label="Start speaking" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="2.5" width="6" height="12" rx="3"></rect><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3.5M9 21.5h6"></path></svg></button><div class="start-hint" id="startHint">TAP TO START</div></div></main>
 <section class="controls"><div class="microw" id="micDock"><div class="miclabel" id="miclabel" aria-hidden="true"> </div></div>
@@ -78,12 +88,13 @@ button:disabled{opacity:.4;cursor:not-allowed}
 (()=>{
 'use strict';
 const $=id=>document.getElementById(id);
-let direction='forward',recognition=null,listening=false,starting=false,busy=false,gotResult=false,stopRequested=false,recognitionError='',capturedText='',interimText='',recognitionEnded=false,noticeTimer=null;
+let sourceLanguage='en',targetLanguage='th',recognition=null,listening=false,starting=false,busy=false,gotResult=false,stopRequested=false,recognitionError='',capturedText='',interimText='',recognitionEnded=false,noticeTimer=null;
 const chat=$('chat'),mic=$('mic'),status=$('status');
 const SpeechRecognition=window.SpeechRecognition||window.webkitSpeechRecognition;
 const supported=!!SpeechRecognition;
 function setStatus(value,label){
  status.textContent=value;
+ if(label){$('startHint').textContent=label.toUpperCase();$('miclabel').textContent=label.toUpperCase();}
  const loader=$('translationLoader');
  const show=value==='TRANSLATING';
  loader.classList.toggle('active',show);
@@ -93,8 +104,8 @@ function setStatus(value,label){
 }
 function dockMic(){
  const dock=$('micDock');
- if(mic.parentElement!==dock){
-  dock.append(mic);
+ if(mic.parentElement!==dock.querySelector('div')){
+  dock.querySelector('div').append(mic);
   dock.classList.add('has-mic');
   mic.classList.add('docked');
   $('micStage').hidden=true;
@@ -104,7 +115,7 @@ function setBusy(value){
  busy=value;
  mic.disabled=value;
  $('typed').disabled=value;
- document.querySelectorAll('.mode button').forEach(button=>button.disabled=value||listening);
+ document.querySelectorAll('.language-picker select,.swap-languages').forEach(control=>control.disabled=value||listening);
  $('form').querySelector('button').disabled=value;
 }
 function clearNotice(){
@@ -116,21 +127,39 @@ function idle(message=''){
  listening=false;
  mic.classList.remove('listening');
  mic.disabled=busy;
- document.querySelectorAll('.mode button').forEach(button=>button.disabled=busy);
+ document.querySelectorAll('.language-picker select,.swap-languages').forEach(control=>control.disabled=busy);
  clearNotice();
- setStatus('TAP TO SPEAK',message);
+ setStatus('READY',message||'Tap to start');
  if(message==='No speech captured. Tap to try again.'){
   noticeTimer=setTimeout(()=>{$('miclabel').classList.add('notice-fade');},5650);
   noticeTimer=setTimeout(()=>{$('miclabel').textContent='Tap to speak';$('miclabel').classList.remove('notice-fade');noticeTimer=null;},6000);
  }
 }
-function setDirection(next){if(busy||listening||starting)return;direction=next;$('forwardBtn').classList.toggle('active',direction==='forward');$('reverseBtn').classList.toggle('active',direction==='reverse');}
-$('forwardBtn').onclick=()=>setDirection('forward');$('reverseBtn').onclick=()=>setDirection('reverse');
+const languageOptions={
+ en:{speech:'en-US',api:'en',label:'ENGLISH'},
+ th:{speech:'th-TH',api:'th',label:'THAI'},
+ lo:{speech:'lo-LA',api:'lo',label:'LAO'}
+};
 function langs(){
- const source=direction==='forward'?{speech:'en-US',api:'en',label:'ENGLISH'}:{speech:'th-TH',api:'th',label:'THAI'};
- const target=direction==='forward'?{speech:'th-TH',api:'th',label:'THAI'}:{speech:'en-US',api:'en',label:'ENGLISH'};
+ const source=languageOptions[sourceLanguage],target=languageOptions[targetLanguage];
  return [source.speech,target.speech,source.api,target.api,source.label,target.label];
 }
+function updateLanguages(){
+ sourceLanguage=$('sourceLanguage').value;
+ targetLanguage=$('targetLanguage').value;
+ Array.from($('sourceLanguage').options).forEach(option=>option.disabled=option.value===targetLanguage);
+ Array.from($('targetLanguage').options).forEach(option=>option.disabled=option.value===sourceLanguage);
+}
+$('sourceLanguage').addEventListener('change',updateLanguages);
+$('targetLanguage').addEventListener('change',updateLanguages);
+$('swapLanguages').addEventListener('click',()=>{
+ if(busy||listening||starting)return;
+ const previous=sourceLanguage;
+ $('sourceLanguage').value=targetLanguage;
+ $('targetLanguage').value=previous;
+ updateLanguages();
+});
+updateLanguages();
 let activePlayer=null,speechToken=0,playerProgressTimer=null;
 function playerDuration(text,lang){return Math.max(2,text.length/(lang.startsWith('th')?7.5:13));}
 function playerTime(seconds){const value=Math.max(0,Math.floor(seconds));return Math.floor(value/60)+':'+String(value%60).padStart(2,'0');}
@@ -201,11 +230,11 @@ async function translate(text){
  }finally{clearTimeout(timeout)}
 }
 function addMessage(original,translated,sourceLang,targetLang){
- const side=direction==='reverse'?'left':'right';
+ const side=sourceLanguage==='en'?'right':'left';
  const bubble=document.createElement('article');bubble.className='message '+side;
  const tag=document.createElement('div');tag.className='tag';tag.textContent=sourceLang+' · ORIGINAL';
  const orig=document.createElement('div');orig.className='original';orig.textContent=original;
- const trans=document.createElement('div');trans.className='translated';if(targetLang.toLowerCase().startsWith('th'))trans.classList.add('thai-translation');trans.textContent=translated;
+ const trans=document.createElement('div');trans.className='translated';if(targetLang.toLowerCase().startsWith('th')||targetLang.toLowerCase().startsWith('lo'))trans.classList.add('thai-translation');trans.textContent=translated;
  const player={text:translated,lang:targetLang,duration:playerDuration(translated,targetLang),currentChar:0,baseChar:0,startedAt:0,resolve:null};
  const controls=document.createElement('div');controls.className='audio-player';
  player.toggle=document.createElement('button');player.toggle.type='button';player.toggle.textContent='PLAY';player.toggle.setAttribute('aria-label','Play translation audio');
@@ -232,7 +261,7 @@ async function handleText(value){
  try{
   const translated=await translate(clean);
   const player=addMessage(clean,translated,sourceLabel,targetLabel);
-  setStatus('SPEAKING','Speaking translation…');
+  setStatus('SPEAKING','SPEAKING TRANSLATION…');
   await speak(translated,target,player);
   idle();
  }catch(error){
@@ -241,7 +270,7 @@ async function handleText(value){
   mic.disabled=false;
   $('typed').disabled=false;
   $('form').querySelector('button').disabled=false;
-  document.querySelectorAll('.mode button,.pair').forEach(button=>button.disabled=false);
+  document.querySelectorAll('.language-picker select,.swap-languages').forEach(control=>control.disabled=false);
  }finally{
   setBusy(false);
   if(!listening&&status.textContent==='TRANSLATING')idle();
@@ -255,7 +284,7 @@ function unlockMic(){
  mic.disabled=busy;
  mic.setAttribute('aria-label','Tap to speak');
  mic.setAttribute('aria-pressed','false');
- document.querySelectorAll('.mode button,.pair').forEach(button=>button.disabled=busy);
+ document.querySelectorAll('.language-picker select,.swap-languages').forEach(control=>control.disabled=busy);
 }
 function processCapturedSpeech(){
  const transcript=(capturedText+' '+interimText).trim();
@@ -300,7 +329,7 @@ function startListening(){
  starting=true;
  mic.disabled=busy;
  mic.setAttribute('aria-label','Starting microphone');
- document.querySelectorAll('.mode button,.pair').forEach(button=>button.disabled=true);
+ document.querySelectorAll('.language-picker select,.swap-languages').forEach(control=>control.disabled=true);
  setStatus('STARTING','Starting microphone…');
  instance.onstart=()=>{
   starting=false;
@@ -313,7 +342,7 @@ function startListening(){
   mic.setAttribute('aria-label','Tap to stop and translate');
   mic.setAttribute('aria-pressed','true');
   mic.classList.add('listening');
-  setStatus('LISTENING','Tap again when you’re done');
+  setStatus('LISTENING','LISTENING…');
  };
  instance.onresult=event=>{
   interimText='';
@@ -403,7 +432,7 @@ mic.addEventListener('click',async()=>{
   const granted=await requestMicPermission();
   if(!granted)return;
  }
- $('miclabel').textContent='Listening…';
+ setStatus('STARTING','LISTENING…');
  startListening();
 });
 $('form').onsubmit=event=>{
