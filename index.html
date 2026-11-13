@@ -31,6 +31,8 @@ h1{font-size:17px;letter-spacing:.22em;margin:0;font-weight:650;color:#eee9dc}
 .tag{font-size:8px;text-transform:uppercase;letter-spacing:.13em;color:inherit;margin-bottom:5px;font-weight:700;opacity:.68}
 .original{font-size:15px;line-height:1.5;color:inherit;white-space:pre-wrap}
 .translated{font-size:13px;line-height:1.5;color:inherit;opacity:.78;margin-top:7px;padding-top:7px;border-top:1px solid currentColor;white-space:pre-wrap}
+/* Thai translations are deliberately larger and higher contrast for easy handoff to Thai speakers. */
+.translated.thai-translation{font-size:23px;line-height:1.7;font-weight:600;letter-spacing:0;opacity:1;overflow-wrap:anywhere}
 .bubble-actions{display:flex;justify-content:flex-end;margin-top:7px}
 .audio-player{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:9px;margin-top:12px;padding-top:9px;border-top:1px solid currentColor;color:inherit}
 .audio-player button{background:#ffffff20;border:1px solid currentColor;color:inherit;border-radius:99px;min-width:54px;padding:7px 9px;font-size:9px;font-weight:700;letter-spacing:.04em}
@@ -203,7 +205,7 @@ function addMessage(original,translated,sourceLang,targetLang){
  const bubble=document.createElement('article');bubble.className='message '+side;
  const tag=document.createElement('div');tag.className='tag';tag.textContent=sourceLang+' · ORIGINAL';
  const orig=document.createElement('div');orig.className='original';orig.textContent=original;
- const trans=document.createElement('div');trans.className='translated';trans.textContent=translated;
+ const trans=document.createElement('div');trans.className='translated';if(targetLang.toLowerCase().startsWith('th'))trans.classList.add('thai-translation');trans.textContent=translated;
  const player={text:translated,lang:targetLang,duration:playerDuration(translated,targetLang),currentChar:0,baseChar:0,startedAt:0,resolve:null};
  const controls=document.createElement('div');controls.className='audio-player';
  player.toggle=document.createElement('button');player.toggle.type='button';player.toggle.textContent='PLAY';player.toggle.setAttribute('aria-label','Play translation audio');
