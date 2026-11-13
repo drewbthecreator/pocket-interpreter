@@ -281,6 +281,14 @@ function addMessage(original,translated,sourceLang,targetLang){
  player.seek=document.createElement('input');player.seek.type='range';player.seek.min='0';player.seek.max='1000';player.seek.step='1';player.seek.value='0';player.seek.setAttribute('aria-label','Seek translation audio');
  player.clock=document.createElement('span');player.clock.className='audio-time';player.clock.textContent='0:00 / '+playerTime(player.duration);
  player.toggle.addEventListener('click',()=>{
+  if(player.lang&&player.lang.toLowerCase().startsWith('lo')&&!player.audio){
+   speak(player.text,player.lang,player).catch(error=>{
+    console.warn('Lao audio retry failed:',error);
+    player.toggle.textContent='RETRY';
+    player.clock.textContent='Lao audio unavailable';
+   });
+   return;
+  }
   if(player.audio){
    if(player.audio.paused){player.audio.play().catch(()=>{player.toggle.textContent='RETRY';player.clock.textContent='Tap PLAY to retry';});}
    else player.audio.pause();
@@ -320,7 +328,12 @@ async function handleText(value){
   const translated=await translate(clean);
   const player=addMessage(clean,translated,sourceLabel,targetLabel);
   setStatus('SPEAKING','SPEAKING TRANSLATION…');
-  await speak(translated,target,player);
+  try{await speak(translated,target,player);}
+  catch(speechError){
+   console.warn('Translation audio could not be loaded:',speechError);
+   player.toggle.textContent='RETRY';
+   player.clock.textContent=target.toLowerCase().startsWith('lo')?'Lao audio unavailable':'Audio unavailable';
+  }
   idle();
  }catch(error){
   console.error(error);
