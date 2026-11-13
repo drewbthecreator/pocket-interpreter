@@ -151,11 +151,13 @@ function updateLanguages(){
  Array.from($('targetLanguage').options).forEach(option=>option.disabled=option.value===sourceLanguage);
 }
 $('sourceLanguage').addEventListener('change',()=>{
- if($('sourceLanguage').value===targetLanguage)$('targetLanguage').value=sourceLanguage;
+ const selected=$('sourceLanguage').value;
+ if(selected===targetLanguage)$('targetLanguage').value=sourceLanguage;
  updateLanguages();
 });
 $('targetLanguage').addEventListener('change',()=>{
- if($('targetLanguage').value===sourceLanguage)$('sourceLanguage').value=targetLanguage;
+ const selected=$('targetLanguage').value;
+ if(selected===sourceLanguage)$('sourceLanguage').value=targetLanguage;
  updateLanguages();
 });
 $('swapLanguages').addEventListener('click',()=>{
@@ -193,9 +195,9 @@ function playFrom(player,charIndex){
  const voice=voices.find(item=>item.lang.toLowerCase()===player.lang.toLowerCase())||voices.find(item=>item.lang.toLowerCase().startsWith(prefix));
  if(voice)utterance.voice=voice;
  utterance.onboundary=event=>{if(token===speechToken)updatePlayer(player,offset+(event.charIndex||0));};
- const finish=()=>{if(token!==speechToken)return;updatePlayer(player,player.text.length);player.toggle.textContent='PLAY';if(playerProgressTimer){clearInterval(playerProgressTimer);playerProgressTimer=null;}if(activePlayer===player)activePlayer=null;if(player.resolve){const done=player.resolve;player.resolve=null;done();}};
- utterance.onend=finish;
- utterance.onerror=finish;
+ const finish=(failed=false)=>{if(token!==speechToken)return;if(failed){player.toggle.textContent='RETRY';player.clock.textContent='Audio unavailable';player.toggle.setAttribute('aria-label','Retry translation audio');}else{updatePlayer(player,player.text.length);player.toggle.textContent='PLAY';}if(playerProgressTimer){clearInterval(playerProgressTimer);playerProgressTimer=null;}if(activePlayer===player)activePlayer=null;if(player.resolve){const done=player.resolve;player.resolve=null;done();}};
+ utterance.onend=()=>finish(false);
+ utterance.onerror=event=>{console.warn('Speech playback failed:',event.error);finish(true);};
  playerProgressTimer=setInterval(()=>{
   if(token!==speechToken||activePlayer!==player||speechSynthesis.paused)return;
   const elapsed=(Date.now()-player.startedAt)/1000;
@@ -250,7 +252,7 @@ function addMessage(original,translated,sourceLang,targetLang){
   if(activePlayer===player&&speechSynthesis.speaking){
    if(speechSynthesis.paused){player.baseChar=player.currentChar;player.startedAt=Date.now();speechSynthesis.resume();player.toggle.textContent='PAUSE';}
    else{speechSynthesis.pause();player.toggle.textContent='PLAY';}
-  }else playFrom(player,player.currentChar>=player.text.length?0:player.currentChar);
+  }else playFrom(player,player.toggle.textContent==='RETRY'||player.currentChar>=player.text.length?0:player.currentChar);
  });
  player.seek.addEventListener('input',()=>{const charIndex=Math.round(Number(player.seek.value)/1000*player.text.length);updatePlayer(player,charIndex);});
  player.seek.addEventListener('change',()=>playFrom(player,Math.round(Number(player.seek.value)/1000*player.text.length)));
