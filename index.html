@@ -232,7 +232,7 @@ async function speak(text,lang,player){
   audio.addEventListener('play',()=>{player.toggle.textContent='PAUSE';});
   audio.addEventListener('pause',()=>{if(!audio.ended)player.toggle.textContent='PLAY';});
   audio.addEventListener('ended',()=>{player.toggle.textContent='PLAY';player.seek.value='1000';player.clock.textContent=playerTime(audio.duration)+' / '+playerTime(audio.duration);});
-  audio.addEventListener('error',()=>{player.toggle.textContent='RETRY';player.clock.textContent='Lao audio unavailable';});
+  audio.addEventListener('error',()=>{player.audio=null;player.toggle.textContent='RETRY';player.clock.textContent='Lao audio unavailable';});
   try{await audio.play();}catch(error){
    player.toggle.textContent='PLAY';
    player.clock.textContent='Tap PLAY to hear Lao';
