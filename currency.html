@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#090a0c">
+<meta name="description" content="Simple live Thai baht to US dollar converter.">
+<link rel="manifest" href="./manifest.json">
+<link rel="icon" href="./icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="./icon.svg">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>THB to USD | Thailand Currency Converter</title>
+<style>
+:root{color-scheme:dark;--bg:#090a0c;--panel:#111315;--line:#292a27;--muted:#85857e;--text:#f3f0e8;--gold:#c6a96b;--gold-soft:#8e784d}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 50% -18%,#29251b 0,transparent 42%),var(--bg);color:var(--text);font:15px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;padding:env(safe-area-inset-top) 18px env(safe-area-inset-bottom)}
+main{width:min(100%,480px);margin:0 auto;min-height:100vh;display:flex;flex-direction:column;justify-content:center;padding:34px 0}
+header{text-align:center;margin-bottom:28px}
+h1{font-size:16px;letter-spacing:.2em;margin:0 0 12px;font-weight:650;color:#eee9dc}
+.subtitle{color:#9b988d;font-size:12px;letter-spacing:.08em}
+.card{border:1px solid #393326;border-radius:16px;background:#111315;padding:22px;box-shadow:0 24px 80px #0007}
+.field-label{display:block;margin:0 0 9px;color:#a99a78;font-size:10px;font-weight:700;letter-spacing:.16em}
+.amount-wrap{display:flex;align-items:center;gap:12px;border:1px solid var(--line);border-radius:11px;background:#0c0e0f;padding:0 15px}
+.currency-code{color:#c6a96b;font-size:12px;font-weight:750;letter-spacing:.1em}
+input{width:100%;min-width:0;height:62px;border:0;outline:0;background:transparent;color:var(--text);font-size:27px;font-weight:600;font-variant-numeric:tabular-nums}
+input:focus{outline:none}
+.divider{display:flex;align-items:center;gap:12px;margin:18px 0;color:#77766f;font-size:10px;letter-spacing:.12em}
+.divider:before,.divider:after{content:"";height:1px;flex:1;background:#292a27}
+.result{padding:17px 15px 19px;border:1px solid #3b3425;border-radius:11px;background:#191710}
+.result-label{color:#a99a78;font-size:10px;font-weight:700;letter-spacing:.16em}
+.output{display:block;margin-top:8px;color:#f2dfb2;font-size:clamp(36px,10vw,48px);font-weight:650;letter-spacing:-.04em;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.rate{margin:17px 2px 0;color:#aaa79d;font-size:12px;line-height:1.6;text-align:center}
+.meta{margin-top:8px;color:#77766f;font-size:10px;text-align:center}
+.refresh{width:100%;min-height:48px;margin-top:19px;border:1px solid var(--gold-soft);border-radius:9px;background:#292419;color:#e8d4a6;font-size:11px;font-weight:700;letter-spacing:.12em}
+.status{min-height:17px;margin-top:11px;text-align:center;color:#9b988d;font-size:11px}
+nav{display:flex;justify-content:center;gap:20px;margin-top:23px}
+nav a{color:#aaa18e;text-decoration:none;font-size:10px;letter-spacing:.1em}
+nav a:hover{color:#e8d4a6}
+.footnote{margin:22px auto 0;max-width:350px;color:#68675f;font-size:10px;line-height:1.7;text-align:center}
+</style>
+</head>
+<body>
+<main>
+<header>
+<h1>THAILAND CURRENCY</h1>
+<div class="subtitle">A SIMPLE BAHT TO DOLLAR CONVERTER</div>
+</header>
+<section class="card" aria-label="Currency converter">
+<label class="field-label" for="baht">YOU HAVE · THAI BAHT</label>
+<div class="amount-wrap"><span class="currency-code">THB ฿</span><input id="baht" type="number" inputmode="decimal" min="0" step="0.01" value="100" autocomplete="off"></div>
+<div class="divider">CONVERTS TO</div>
+<div class="result" aria-live="polite">
+<div class="result-label">US DOLLARS</div>
+<output class="output" id="usd">$—</output>
+</div>
+<div class="rate" id="rate">Getting the latest exchange rate…</div>
+<div class="meta" id="updated"></div>
+<button class="refresh" id="refresh" type="button">REFRESH EXCHANGE RATE</button>
+<div class="status" id="status" role="status" aria-live="polite"></div>
+</section>
+<nav><a href="./index.html">← INTERPRETER</a></nav>
+<p class="footnote">Exchange rates update periodically and may differ from the rate your bank, card, or exchange counter gives you. Internet connection required.</p>
+</main>
+<script>
+(()=> {
+'use strict';
+const amount=document.getElementById('baht');
+const output=document.getElementById('usd');
+const rateLabel=document.getElementById('rate');
+const updated=document.getElementById('updated');
+const status=document.getElementById('status');
+const refresh=document.getElementById('refresh');
+let usdRate=null;
+const money=new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',minimumFractionDigits:2,maximumFractionDigits:2});
+function convert(){
+ const baht=Number(amount.value);
+ output.textContent=amount.value.trim()===''||!Number.isFinite(baht)?'$—':money.format(baht*usdRate);
+}
+async function loadRate(){
+ refresh.disabled=true;
+ status.textContent='Updating exchange rate…';
+ try{
+  const response=await fetch('https://open.er-api.com/v6/latest/THB',{cache:'no-store'});
+  if(!response.ok)throw new Error('Exchange rate service unavailable');
+  const data=await response.json();
+  if(data.result!=='success'||!data.rates||!Number.isFinite(data.rates.USD))throw new Error('Could not read the exchange rate');
+  usdRate=data.rates.USD;
+  convert();
+  rateLabel.textContent='1 THB = '+usdRate.toFixed(6)+' USD  ·  1 USD = '+(1/usdRate).toFixed(2)+' THB';
+  updated.textContent='Rate updated: '+new Date(data.time_last_update_utc||Date.now()).toLocaleString();
+  status.textContent='';
+ }catch(error){
+  status.textContent=usdRate===null?'Could not load rate. Check your internet and tap refresh.':'Could not refresh. Showing the last rate loaded.';
+ }finally{refresh.disabled=false;}
+}
+amount.addEventListener('input',convert);
+refresh.addEventListener('click',loadRate);
+loadRate();
+})();
+</script>
+</body>
+</html>
